@@ -1,5 +1,6 @@
 import React from 'react';
-import Brick from '../engine/Brick';
+import ColorPicker from './ColorPicker';
+
 
 let styles = {};
 
@@ -42,7 +43,6 @@ styles.row = {
 }
 styles.row.hover = {
   color: '#A0CCFF',
-  cursor: 'pointer',
 }
 styles.text = {
   display: 'flex',
@@ -54,12 +54,21 @@ styles.text.i = {
 }
 
 
-
 class Sidebar extends React.Component {
   render() {
-    const { utilsOpen, resetScene } = this.props;
+    const { resetScene, color, onClickSetColor } = this.props;
     return (
-      <div style={utilsOpen ? styles.visible : styles.sidebar}>
+      <div style={styles.visible}>
+
+        <div style={styles.content}>
+          <div style={styles.row} onClick={resetScene}>
+            <div style={styles.text}>
+              <span>Materials</span>
+              <ColorPicker color={color} handleSetColor={onClickSetColor} />
+            </div>
+          </div>
+        </div>
+
         <div style={styles.content}>
           <div style={styles.row} onClick={resetScene}>
             <div style={styles.text}>
@@ -68,6 +77,7 @@ class Sidebar extends React.Component {
             </div>
           </div>
         </div>
+
       </div>
     );
   }

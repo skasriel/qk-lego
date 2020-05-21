@@ -1,10 +1,9 @@
 {
-  "name": "example-create-react-app-express",
+  "name": "Quentin-Lego-Server",
   "version": "1.0.0",
   "scripts": {
-    "client": "cd client && yarn start",
-    "server": "cd server && nodemon server.js",
-    "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn client\""
+    "server": "nodemon server.js",
+    "dev": "concurrently --kill-others-on-fail \"yarn server\""
   },
   "dependencies": {
     "body-parser": "^1.18.3",

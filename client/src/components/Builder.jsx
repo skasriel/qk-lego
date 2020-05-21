@@ -4,26 +4,23 @@ import { connect } from 'react-redux';
 import {
   getMode,
   getColor,
+  getColorType,
   getBrickID,
-  getAreUtilsOpen,
-  getBricks,
 } from '../selectors';
 import {
   setMode,
   setColor,
-  toggleGrid,
   setBrick,
-  toggleUtils,
   addBrick,
   removeBrick,
   updateBrick,
   resetScene,
-  setScene,
 } from '../actions';
 import Scene from '../engine/Scene';
 import Topbar from './Topbar';
 import Bottombar from './Bottombar';
 import Sidebar from './Sidebar';
+import {Modes} from '../util';
 
 //import styles from '../styles/builder.css';
 let styles = {};
@@ -31,6 +28,15 @@ styles.builder = {
   color: '#000000',
 }
 
+function getCursor(mode) { // TODO: this doesn't work for some reason
+  console.log("get cursor for mode "+mode);
+  switch(mode) {
+    case Modes.Delete: return 'no-drop'; break;
+    case Modes.Clone: return 'copy'; break;
+    case Modes.Move: return 'move'; break;
+    default: return 'default'; break;
+  }
+}
 
 class Builder extends React.Component {
   render() {
@@ -38,42 +44,37 @@ class Builder extends React.Component {
       mode,
       setMode,
       color,
+      colorType,
       setColor,
-      toggleGrid,
       brickID,
       setBrick,
-      utilsOpen,
-      toggleUtils,
       removeBrick,
       addBrick,
       bricks,
       updateBrick,
       resetScene,
-      setScene
     } = this.props;
     return (
       <div style={styles.builder}>
         <Topbar
           onClickSetMode={setMode}
-          onClickSetColor={setColor}
-          onClickToggleGrid={toggleGrid}
-          mode={mode}
-          color={color}
-          brickID={brickID}
-          onClickSetBrick={setBrick}
-          utilsOpen={utilsOpen}
-          onClickToggleUtils={toggleUtils}>
-          <Sidebar utilsOpen={utilsOpen} resetScene={resetScene} bricks={bricks} importScene={setScene} />
+          mode={mode}>
+          <Sidebar
+            resetScene={resetScene}
+            color={color}
+            colorType={colorType}
+            onClickSetColor={setColor}
+            />
         </Topbar>
 
         <Scene
-          brickColor={color}
-          bricks={bricks}
+          setMode={setMode}
           mode={mode}
+          brickColor={color}
+          colorType={colorType}
           brickID={brickID}
-          removeObject={removeBrick}
-          addObject={addBrick}
-          updateObject={updateBrick} />
+          style={{cursor: getCursor(mode)}}
+          />
 
         <Bottombar
           brickID={brickID}
@@ -87,23 +88,19 @@ class Builder extends React.Component {
 const mapStateToProps = (state) => ({
   mode: getMode(state),
   color: getColor(state),
+  colorType: getColorType(state),
   brickID: getBrickID(state),
-  utilsOpen: getAreUtilsOpen(state),
-  bricks: getBricks(state),
 });
 
 
 const mapDispatchToProps = {
   setMode,
   setColor,
-  toggleGrid,
   setBrick,
-  toggleUtils,
   removeBrick,
   addBrick,
   updateBrick,
   resetScene,
-  setScene,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Builder);

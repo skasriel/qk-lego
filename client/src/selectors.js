@@ -2,9 +2,11 @@ export function getMode(state) {
   return state.builder.mode;
 }
 
-
 export function getColor(state) {
   return state.builder.color;
+}
+export function getColorType(state) {
+  return state.builder.colorType;
 }
 
 export function getBrickID(state) {

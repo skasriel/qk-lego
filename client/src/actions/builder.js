@@ -1,5 +1,4 @@
 export const SET_MODE = 'SET_MODE';
-
 export function setMode(mode) {
   return {
     type: SET_MODE,
@@ -11,28 +10,18 @@ export function setMode(mode) {
 
 
 export const SET_COLOR = 'SET_COLOR';
-
-export function setColor(color) {
+export function setColor(color, colorType) {
+  console.log(`actions.setColor ${color} ${colorType}`);
   return {
     type: SET_COLOR,
     payload: {
-      color,
+      color, colorType
     },
   };
 }
 
 
-export const TOGGLE_GRID = 'TOGGLE_GRID';
-
-export function toggleGrid() {
-  return {
-    type: TOGGLE_GRID,
-  };
-}
-
-
 export const SET_BRICK = 'SET_BRICK';
-
 export function setBrick(brickID) {
   console.log("Scene > addBrick "+brickID);
   return {

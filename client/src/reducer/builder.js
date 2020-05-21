@@ -1,12 +1,13 @@
 import * as BuilderActions from '../actions/builder';
 
-import { colors, BrickCollections } from '../util';
-
+import { ColorCollections, Modes } from '../util';
+import { BrickCollections } from '../engine/BrickCollections';
 
 const initialState = {
-  mode: 'build',
-  color: colors[0], //.Solid[0],
-  brickID: BrickCollections.collections['Bricks'][0],
+  mode: Modes.Explore,
+  color: ColorCollections.getDefaultColor(), //.Solid[0],
+  colorType: ColorCollections.getDefaultColorType(),
+  brickID: BrickCollections.defaultBrick, //BrickCollections.collections['Bricks'][0],
 };
 
 
@@ -20,17 +21,10 @@ export default function builder(state=initialState, action) {
       };
     }
     case BuilderActions.SET_COLOR: {
-      const { color } = action.payload;
+      const { color, colorType } = action.payload;
       return {
         ...state,
-        color,
-      };
-    }
-    case BuilderActions.TOGGLE_GRID: {
-      const { grid } = state;
-      return {
-        ...state,
-        grid: !grid,
+        color, colorType,
       };
     }
     case BuilderActions.SET_BRICK: {

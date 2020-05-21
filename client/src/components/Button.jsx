@@ -1,7 +1,5 @@
 import React from 'react';
 
-//import styles from '../styles/button.css';
-
 let styles = {};
 
 styles.button = {
@@ -15,7 +13,6 @@ styles.button = {
 }
 styles.button.hover = {
   color: '#A0CCFF',
-  cursor: 'pointer',
 }
 styles.active = {
   composes: 'button',
@@ -44,9 +41,7 @@ styles.text = {
 
 const Button = ({ text, icon, active, onClick }) => (
   <div style={active ? styles.active : styles.button} onClick={onClick}>
-    <div style={styles.icon}>
-      <i className={`ion-${icon}`} />
-    </div>
+    <ion-icon name="${icon}"></ion-icon>
     <div style={styles.text}>
       {text}
     </div>

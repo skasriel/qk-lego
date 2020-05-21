@@ -4,6 +4,12 @@ const path = require('path');
 module.exports = {
   watch: false,
 
+  server: {
+    compress: true,
+    public: 'stephanes-mbp.lan',
+    disableHostCheck: true
+  },
+
   watchOptions: {
     aggregateTimeout: 200,
     poll: 10000,
@@ -22,7 +28,7 @@ module.exports = {
       ]
     },
   }*/
-  
+
 }
 /*module.exports = function override(config, env) {
   console.log("WAS HERE!"); process.exit();

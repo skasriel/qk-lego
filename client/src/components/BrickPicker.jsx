@@ -2,28 +2,19 @@ import React from 'react';
 import If from 'if-only';
 import isEqual from 'lodash/isEqual';
 
-import {BrickCollections} from '../util';
+import {BrickCollections} from '../engine/BrickCollections';
 
 import { CarouselProvider, Slider, Slide, ButtonBack, ButtonNext, ButtonFirst, ButtonLast, DotGroup } from 'pure-react-carousel';
 import 'pure-react-carousel/dist/react-carousel.es.css';
 
 let styles = {};
 
-/*styles.brickPicker = {
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-start',
-}*/
 styles.brick = {
   color: '#FFFFFF',
   height: '60px',
   //display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-}
-styles.brick.hover = {
-  cursor: 'pointer',
 }
 styles.brickIcon = {
   height: '40px',
@@ -73,7 +64,6 @@ styles.brickThumb = {
   transition: 'all 0.15s ease-in-out',
 }
 styles.brickThumb.hover = {
-  cursor: 'pointer',
   transform: 'translateY(-2px)',
   boxShadow: '0px 5px 10px rgba(0, 0, 0, 0.4)',
 }
@@ -98,10 +88,13 @@ let selectedCollection = "Bricks";
 function displayNameFromID(brickID) {
   return "Brick #"+brickID; //`${dimensions.x}x${dimensions.z}`
 }
-function getBrickIconFromID(brickID) {
-  //const Icon = Icons[`B${dimensions.x}x${dimensions.z}`];
-  //return <Icon />;
-  return "#"+brickID;
+function getBrickIconFromID(brickTemplate) {
+  //console.log(`getBrickIcon with ${JSON.stringify(brickTemplate)}`);
+  if (brickTemplate.type==BrickCollections.basicBrick) {
+    return `${brickTemplate.width}x${brickTemplate.height}x${brickTemplate.depth} (#${brickTemplate.id})`;
+  } else {
+    return "#"+brickTemplate.id;
+  }
 }
 
 class BrickPicker extends React.Component {
@@ -153,7 +146,6 @@ class BrickPicker extends React.Component {
           <ButtonBack>Back</ButtonBack>
           <ButtonNext>Next</ButtonNext>
           <ButtonLast>Last</ButtonLast>
-          <DotGroup dotNumbers />
         </CarouselProvider>
       </div>
     );

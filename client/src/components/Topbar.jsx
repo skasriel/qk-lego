@@ -2,6 +2,9 @@ import React from 'react';
 
 import Button from './Button';
 import ColorPicker from './ColorPicker';
+import {Modes} from '../util'
+
+import {ionicons} from 'ionicons';
 
 //import styles from '../styles/topbar.css';
 
@@ -54,8 +57,6 @@ const Topbar = ({
   onClickSetMode,
   color,
   onClickSetColor,
-  utilsOpen,
-  onClickToggleUtils,
   children
 }) => {
   return (
@@ -65,28 +66,36 @@ const Topbar = ({
           Mode
         </div>
         <Button
-          active={mode === 'build'}
-          onClick={() => onClickSetMode('build')}
+          active={mode === Modes.Build}
+          onClick={() => onClickSetMode(Modes.Build)}
           icon="hammer"
-          text="Build" />
+          text="Build (b)" />
         <Button
-          active={mode === 'paint'}
-          onClick={() => onClickSetMode('paint')}
+          active={mode === Modes.Paint}
+          onClick={() => onClickSetMode(Modes.Paint)}
           icon="paintbrush"
-          text="Paint" />
-      </div>
-      <div style={styles.section}>
-        <div style={styles.title}>
-          COLOR
-        </div>
-        <ColorPicker background={color} handleSetColor={onClickSetColor} />
-      </div>
-      <div style={styles.rightSection}>
+          text="Paint (p)" />
         <Button
-          active={utilsOpen}
-          onClick={onClickToggleUtils}
-          icon="navicon-round"
-          text="Utils" />
+          active={mode === Modes.Delete}
+          onClick={() => onClickSetMode(Modes.Delete)}
+          icon="close-circle-outline"
+          text="Delete (d)" />
+        <Button
+          active={mode === Modes.Move}
+          onClick={() => onClickSetMode(Modes.Move)}
+          icon="copy-outline"
+          text="Move (m)" />
+        <Button
+          active={mode === Modes.Clone}
+          onClick={() => onClickSetMode(Modes.Clone)}
+          icon="color-wand-outline"
+          text="Clone (c)" />
+        <Button
+          active={mode === Modes.Explore}
+          onClick={() => onClickSetMode(Modes.Explore)}
+          icon="color-wand-outline"
+          text="Explore (x)" />
+
       </div>
       {children}
     </div>
@@ -95,3 +104,13 @@ const Topbar = ({
 
 
 export default Topbar;
+
+/*
+<div style={styles.rightSection}>
+  <Button
+    active={utilsOpen}
+    onClick={onClickToggleUtils}
+    icon="navicon-round"
+    text="Utils" />
+</div>
+*/
