@@ -7,6 +7,7 @@ import {OBJBrick} from './OBJBrick';
 import { BrickCollections } from './BrickCollections';
 
 const USE_SHADOWS=false;
+let staticCounter=0;
 
 export function CSSToHex(cssColor) {
   return parseInt(`#${cssColor.substring(1)}`, 16);
@@ -63,8 +64,12 @@ export class BasicBrick extends Brick {
 
     super(brickID, color, colorType, model);
 
+    model.name = `BasicBrick type ${brickID} #${staticCounter++}`;
+
+
     this.ghostBlock = new THREE.Mesh(geo.clone(), mat);
     this.ghostBlock.brick = this;
+    this.ghostBlock.name = `Ghost block for ${this.model.name}`;
     this.model.ghost = this.ghostBlock;
     this.width = width;
     this.height = height;

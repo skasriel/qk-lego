@@ -28,6 +28,17 @@ function App() {
     <AppContainer>
       <Provider store={store}>
         <Builder />
+        <div id="blocker">
+          <div id="instructions">
+            <span style={{fontSsize:'36px'}}>Click to play</span>
+            <br /><br />
+            Move: WASD<br/>
+            Jump: SPACE<br/>
+            Look: MOUSE
+          </div>
+        </div>
+        <div id="root"></div>
+
       </Provider>
     </AppContainer>
   );

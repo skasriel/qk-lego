@@ -4,7 +4,7 @@ import { ColorCollections, Modes } from '../util';
 import { BrickCollections } from '../engine/BrickCollections';
 
 const initialState = {
-  mode: Modes.Explore,
+  mode: Modes.Build,
   color: ColorCollections.getDefaultColor(), //.Solid[0],
   colorType: ColorCollections.getDefaultColorType(),
   brickID: BrickCollections.defaultBrick, //BrickCollections.collections['Bricks'][0],

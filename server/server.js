@@ -127,6 +127,14 @@ wss.on('connection', function connection(ws) {
         saveWorldToDisk();
         console.log(`Deleted brick ${JSON.stringify(brickToDelete)} because client asked us to. # bricks was ${numBricks} and now ${bricks.length}`);
         break;
+      case Action.Move:
+        const brickID = action.brick.uuid;
+        let brickToMove = bricks.find(brick => {return brick.uuid==brickID});
+        console.log(`Moved brick ${brickID} from ${_toStringVector3D(brickToMove.position)} to ${_toStringVector3D(action.brick.position)}`);
+        brickToMove.position.x = action.brick.position.x;
+        brickToMove.position.y = action.brick.position.y;
+        brickToMove.position.z = action.brick.position.z;
+        break;
       default:
         console.log("Action type not supported yet: "+action.type);
         break;
@@ -160,3 +168,7 @@ function heartbeat() {
 wss.on('close', function close() {
   clearInterval(interval);
 });
+
+function _toStringVector3D(v) {
+  return (`Vector3D [${Math.round(v.x)} ${Math.round(v.y)} ${Math.round(v.z)}]` );
+}

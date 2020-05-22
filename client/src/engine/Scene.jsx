@@ -14,6 +14,8 @@ import Message from '../components/Message';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls.js';
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls.js';
+import { MyControl } from './MyControl';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 
 import { multX, multY, multZ, _toStringBox3, _toStringVector3D } from '../util';
 import {ColorCollections, Modes, Action} from '../util';
@@ -26,6 +28,14 @@ const FILE_VERSION_CURRENT = 1.4;
 const PLANE_OFFSET = 50;
 
 const USE_SHADOWS=false;
+
+var moveForward = false;
+var moveBackward = false;
+var moveLeft = false;
+var moveRight = false;
+var velocity = new THREE.Vector3();
+var direction = new THREE.Vector3();
+
 
 styles.scene = {
   position: 'absolute',
@@ -89,6 +99,12 @@ class Scene extends React.Component {
         let brickToDelete = this.bricks.find(brick => {return brick._uuid==action.uuid});
         console.log(`Server instructed me to delete brick ${action.uuid}`); //, found as ${brickToDelete}`);
         this._deleteBrick(brickToDelete);
+        break;
+      case Action.Move:
+        let brickToMove = this.bricks.find(brick => {return brick._uuid==action.brick.uuid});
+        console.log(`Server instructed me to move brick ${action.brick.uuid}`); //, found as ${brickToDelete}`);
+        brickToMove.position.clone(action.brick.position); // TODO: also move ghost?
+        break;
       case Action.Reload:
         console.log(`Server instructed me to do a full reload`);
         for (let i=0; i<this.bricks.length; i++) {
@@ -204,18 +220,17 @@ class Scene extends React.Component {
       renderer.shadowMap.type = THREE.PCFShadowMap;
     }
     this.renderer = renderer;
-
-    this.modeSetup(mode);
-
+    this.modeSetup(null);
     this.mount.appendChild(this.renderer.domElement);
   }
 
   modeSetup(prevMode) {
     const { mode } = this.props;
-    let camera, controls;
-    if (this.controls) {
-      this.controls.dispose();
+    if (mode === prevMode) {
+      console.log("Shouldn't happen");
+      return;
     }
+    let camera, controls;
 
     if (mode === Modes.Explore) { // Switch from a non-Explore mode to Explore
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, worldSize/10);
@@ -224,14 +239,42 @@ class Scene extends React.Component {
       camera.position.set(0, 3*multY, -25*multZ);
       camera.lookAt( new THREE.Vector3(0, 3*multY - 10, 0) );
       this.scene.fog = new THREE.FogExp2( 0xffffff, 0.00015 );
-      controls = new OrbitControls( camera, this.renderer.domElement );
+      //controls = new OrbitControls(camera, this.renderer.domElement);
+      controls = new MyControl(camera, this.renderer.domElement);
+
+      var rootObj = document.getElementById('root');
+      //console.log("Root = "+rootObj+" "+rootObj.innerHTML.toString());
+      var blocker = document.getElementById( 'blocker' );
+      var instructions = document.getElementById( 'instructions' );
+
+      controls.lock();
+      instructions.addEventListener( 'click', function () {
+        controls.lock();
+      }, false );
+      controls.addEventListener( 'lock', function () {
+        instructions.style.display = 'none';
+        blocker.style.display = 'none';
+      } );
+      controls.addEventListener( 'unlock', function () {
+        blocker.style.display = 'block';
+        instructions.style.display = '';
+      } );
+
+      //this.scene.add( controls.getObject() );
+
       //let controls = new FirstPersonControls( this.camera, this.renderer.domElement );
+      //controls.addEventListener( 'change', () => this._needsRendering=true );
       controls.movementSpeed = 1000;
       controls.lookSpeed = 0.125;
       controls.lookVertical = true;
       controls.constrainVertical = true;
       controls.verticalMin = 1.1;
       controls.verticalMax = 2.2;
+      if (this.controls) {
+        this.controls.dispose();
+      }
+      this.controls = controls;
+      this.camera = camera;
     } else if (prevMode === Modes.Explore || prevMode == null) { // Switch from a Explore mode to a non Explore mode
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, worldSize/10);
       camera.position.set(-24*multX, 70*multY, 20*multZ);
@@ -244,12 +287,26 @@ class Scene extends React.Component {
       controls.maxPolarAngle = Math.PI/2;
       controls.minDistance = 200;
       controls.maxDistance = worldSize;
+      if (this.controls) {
+        this.controls.dispose();
+      }
+      this.controls = controls;
+      this.camera = camera;
     }
 
-    this.controls = controls;
-    this.camera = camera;
-    this.controls.addEventListener('change', () => {this._needsRendering=true});
+    if (mode===Modes.Move) {
+      const transformControl = new TransformControls( this.camera, this.renderer.domElement );
+      transformControl.setMode( "translate" );
+      transformControl.setTranslationSnap( multX );
 
+      transformControl.addEventListener( 'change', () => {this._needsRendering = true} );
+		  transformControl.addEventListener( 'dragging-changed', function ( event ) {
+					if (this.controls)
+            this.controls.enabled = ! event.value;
+			});
+      this.transformControl = transformControl;
+      this.scene.add(transformControl);
+    }
   }
 
   _initEnv() {
@@ -304,9 +361,11 @@ class Scene extends React.Component {
 
   _getRollOverBrick() { // returns the rollover brick and its ghost block
     if (!this.rollOverBrick) {
-      const brick = BasicBrick.createBrick(BrickCollections.defaultBrick.id,
+      const {brickID, color, colorType} = this.props;
+      const brick = BasicBrick.createBrick(brickID.id, color, colorType);
+      /*BrickCollections.defaultBrick.id,
         ColorCollections.getDefaultColor(),
-        ColorCollections.getDefaultColorType());
+        ColorCollections.getDefaultColorType());*/
       brick.addToScene(this.scene, this.ghostScene);
       this.rollOverBrick = brick;
       this.rollOverGhostBlock = brick.ghostBlock;
@@ -340,6 +399,10 @@ class Scene extends React.Component {
     this.raycaster.setFromCamera( this.mouse, this.camera );
 
     var intersectArray = [...this.ghostBricks, this.ghostPlane];
+    const {mode} = this.props;
+    if (mode===Modes.Move && this.isBrickSelected) { // remove the brick we're moving from the raycaster
+      intersectArray = intersectArray.filter((ghost) => {return (ghost !== this.rollOverGhostBlock)});
+    }
     const intersects = this.raycaster.intersectObjects(intersectArray, true);
     if (intersects.length==0) {
       return null;
@@ -426,7 +489,11 @@ class Scene extends React.Component {
     const drag = true;
     this.setState({ drag });
 
-    if (mode==Modes.Delete || mode==Modes.Paint || mode==Modes.Explore) {
+    if (mode===Modes.Delete || mode===Modes.Paint || mode===Modes.Explore) {
+      rollOverBrick.getModel().visible = false;
+      return;
+    }
+    if (mode===Modes.Move && !this.isBrickSelected) {
       rollOverBrick.getModel().visible = false;
       return;
     }
@@ -494,29 +561,77 @@ class Scene extends React.Component {
     if (mode === Modes.Explore) {
       return;
     }
+
     const intersect = this._getIntersect(event);
     if (intersect != null) {
-      if (mode === Modes.Delete) {
-        if (intersect.object !== this.plane && intersect.object !== this.ghostPlane) {
-          var ghost = intersect.object;
-          var brick = ghost.brick;
-          // now send message to server - before making the deletion locally, otherwise the world signature will be wrong!
-          let action = new Action(Action.Delete, this.getWorldSignature());
-          action.deleteBrick(brick);
-          this._sendActionToWebSocket(action);
-          // now delete the brick locally
-          this._deleteBrick(brick);
-        }
-      } else if (mode === Modes.Build) {
-          // intersect.object will be this.plane if building a brick at y=0, otherwise it's the brick below
+      switch (mode) {
+        case Modes.Delete:
+          if (intersect.object !== this.plane && intersect.object !== this.ghostPlane) {
+            // intersect.object will be this.plane if building a brick at y=0, otherwise it's the brick below
+            var ghost = intersect.object;
+            var brick = ghost.brick;
+            // now send message to server - before making the deletion locally, otherwise the world signature will be wrong!
+            let action = new Action(Action.Delete, this.getWorldSignature());
+            action.deleteBrick(brick);
+            this._sendActionToWebSocket(action);
+            // now delete the brick locally
+            this._deleteBrick(brick);
+          }
+          break;
+        case Modes.Build:
           this._createBrick(intersect);
-      } else if (mode === Modes.Paint) {
-        this._paintBrick(intersect);
-      } else {
-        console.log("Unsupported mode: "+mode);
+          break;
+        case Modes.Paint:
+          this._paintBrick(intersect);
+          break;
+        case Modes.Move:
+          this._moveBrick(intersect);
+          break;
+        default:
+          console.log("Unsupported mode: "+mode);
+          break;
       }
       this._saveState();
       this._needsRendering = true;
+    }
+  }
+
+  _moveBrick(intersect) {
+    console.log(`moveBrick isBrickSelected=${this.isBrickSelected}`);
+    if (this.isBrickSelected) { // a brick was already selected, now I'm done with it
+      let brickModel = this.rollOverBrick.getModel();
+      // need to temporarily revert back to initial position otherwise WorldSignature is wrong and server will get upset
+      let currentBrickPosition = brickModel.position.clone();
+      brickModel.position.copy(this.brickStartingPosition);
+      brickModel.material = this.brickStartingMaterial;
+      let hash = this.getWorldSignature();
+      brickModel.position.copy(currentBrickPosition);
+      let action = new Action(Action.Move, hash);
+      action.moveBrick(this.rollOverBrick);
+      this._sendActionToWebSocket(action);
+      this.isBrickSelected = false;
+      this.rollOverBrick = null;
+      this.rollOverGhostBlock = null;
+      this.transformControl.detach();
+    } else { // select the current brick
+      if (intersect.object === this.plane || intersect.object === this.ghostPlane) {
+        return;
+      }
+      this.isBrickSelected = true;
+      let ghost = intersect.object;
+      let brick = ghost.brick;
+      let brickModel = brick.getModel();
+      this.brickStartingPosition = brickModel.position.clone();
+      this.brickStartingMaterial = brickModel.material;
+      brickModel.material = brickModel.material.clone();
+      brickModel.material.transparent=true;
+      brickModel.material.opacity = .6;
+      if (this.rollOverBrick) this.scene.remove(this.rollOverBrick);
+      if (this.rollOverGhostBlock) this.ghostScene.remove(this.rollOverGhostBlock);
+      this.rollOverBrick = brick;
+      this.rollOverGhostBlock = ghost;
+      console.log(`Setting rollover to ${this.rollOverBrick.getModel().name} // ${this.rollOverGhostBlock.name}`);
+      this.transformControl.attach(brickModel);
     }
   }
 
@@ -550,70 +665,120 @@ class Scene extends React.Component {
 
   _onKeyDown(event, scene) {
     let {brick: rollOverBrick} = this._getRollOverBrick();
-    switch(event.keyCode) {
-      case 16: // Shift
-        scene.setState({
-          isShiftDown: true,
-        });
-        break;
-      case 66: // B
-        this.props.setMode(Modes.Build);
-        rollOverBrick.getModel().visible = true;
+    let {mode} = this.props;
+
+    if (mode === Modes.Explore) {       // Movements for Explore mode
+      switch (event.keyCode) {
+        case 38: // up
+        case 87: // w
+        moveForward = true;
         break;
 
-      case 67: // C
-        this.props.setMode(Modes.Clone);
-        rollOverBrick.getModel().visible = false;
+        case 37: // left
+        case 65: // a
+        moveLeft = true;
         break;
 
-      case 68: // D
-        this.props.setMode(Modes.Delete);
-        rollOverBrick.getModel().visible = false;
+        case 40: // down
+        case 83: // s
+        moveBackward = true;
         break;
 
-      case 77: // M
-        this.props.setMode(Modes.Move);
-        rollOverBrick.getModel().visible = false;
+        case 39: // right
+        case 68: // d
+        moveRight = true;
         break;
+      }
+    } else { // Keyboard shortcuts for non-Explore modes
+      switch(event.keyCode) {
+        case 16: // Shift
+          scene.setState({
+            isShiftDown: true,
+          });
+          break;
+        case 66: // B
+          this.props.setMode(Modes.Build);
+          rollOverBrick.getModel().visible = true;
+          break;
 
-      case 80: // P
-        this.props.setMode(Modes.Paint);
-        rollOverBrick.getModel().visible = false;
-        break;
+        case 67: // C
+          this.props.setMode(Modes.Clone);
+          rollOverBrick.getModel().visible = false;
+          break;
 
-      case 82: // R
-        rollOverBrick.rotateY(Math.PI / 2);
-        break;
+        case 68: // D
+          this.props.setMode(Modes.Delete);
+          rollOverBrick.getModel().visible = false;
+          break;
 
-      case 88: // X
-        this.props.setMode(Modes.Explore);
-        rollOverBrick.getModel().visible = false;
-        break;
+        case 77: // M
+          this.props.setMode(Modes.Move);
+          rollOverBrick.getModel().visible = false;
+          break;
 
-      default: break;
+        case 80: // P
+          this.props.setMode(Modes.Paint);
+          rollOverBrick.getModel().visible = false;
+          break;
+
+        case 82: // R
+          rollOverBrick.rotateY(Math.PI / 2);
+          break;
+
+        case 88: // X
+          this.props.setMode(Modes.Explore);
+          rollOverBrick.getModel().visible = false;
+          break;
+        default: break;
+      }
+
     }
   }
 
 
   _onKeyUp(event) {
     const { mode } = this.props;
-    switch (event.keyCode) {
-      case 16:
-        this.setState({
-          isShiftDown: false,
-        });
+    if (mode === Modes.Explore) {
+      switch (event.keyCode) {
+        case 38: // up
+        case 87: // w
+        moveForward = false;
         break;
-      case 68: // D
-        //if (mode === 'build')
-        //  rollOverBrick.getModel().visible = true;
-        //this._needsRendering = true;
+
+        case 37: // left
+        case 65: // a
+        moveLeft = false;
         break;
-      case 82: // R
-        this.setState({
-          isRDown: false,
-        });
+
+        case 40: // down
+        case 83: // s
+        moveBackward = false;
         break;
-      default: break;
+
+        case 39: // right
+        case 68: // d
+        moveRight = false;
+        break;
+      }
+    } else {
+      switch (event.keyCode) {
+        case 16:
+          this.setState({
+            isShiftDown: false,
+          });
+          break;
+        case 68: // D
+          //if (mode === 'build')
+          //  rollOverBrick.getModel().visible = true;
+          //this._needsRendering = true;
+          break;
+        case 82: // R
+          this.setState({
+            isRDown: false,
+          });
+          break;
+        default: break;
+      }
     }
   }
 
@@ -630,8 +795,10 @@ class Scene extends React.Component {
   }
 
   _animate() {
-    if ( this.controls.enabled ) {
-      this.controls.update();
+    let delta = this.clock.getDelta();
+
+    if ( this.controls.enabled && this.controls.update ) {
+      this.controls.update(delta);
     }
 
     if (this.controls.target) {
@@ -644,6 +811,40 @@ class Scene extends React.Component {
     }
 
     const {mode} = this.props;
+
+    if (mode===Modes.Explore /*&& this.controls.isLocked === true*/ ) {
+      velocity.x -= velocity.x * 10.0 * delta;
+      velocity.z -= velocity.z * 10.0 * delta;
+      velocity.y -= 9.8 * delta; // 100.0 = mass
+
+      direction.z = Number( moveForward ) - Number( moveBackward );
+      direction.x = Number( moveRight ) - Number( moveLeft );
+      direction.normalize(); // this ensures consistent movements in all directions
+
+      if ( moveForward || moveBackward ) velocity.z -= direction.z * 100.0 * delta;
+      if ( moveLeft || moveRight ) velocity.x -= direction.x * 100.0 * delta;
+
+      /*if ( mainCharacter.position.y === 0) {
+        velocity.y = Math.max( 0, velocity.y );
+      }*/
+
+      if (velocity.x>0 & velocity.x<0.01) velocity.x=0;
+      if (velocity.y>0 & velocity.y<0.01) velocity.y=0;
+      if (velocity.z>0 & velocity.z<0.01) velocity.z=0;
+      if (velocity.x<0 & velocity.x>-0.01) velocity.x=0;
+      if (velocity.y<0 & velocity.y>-0.01) velocity.y=0;
+      if (velocity.z<0 & velocity.z>-0.01) velocity.z=0;
+
+      let deltaX = - velocity.x * delta * 50.0;
+      let deltaZ = - velocity.z * delta * 50.0;
+      if (deltaX!==0 || deltaZ!==0) {
+        this.controls.moveRight(deltaX);
+        this.controls.moveForward(deltaZ);
+        this._needsRendering = true;
+      }
+
+      //controls.getObject().position.y += ( velocity.y * delta );
+    }
 
     if (this._needsRendering) {
       this._renderScene();
@@ -662,7 +863,9 @@ class Scene extends React.Component {
       first = this.ghostScene;
       second = this.scene;
     }
-    this.controls.update(this.clock.getDelta());
+    if (this.controls.update) {
+      this.controls.update(this.clock.getDelta());
+    }
     this.renderer.render(first, this.camera);
     this.renderer.render(second, this.camera);
   }

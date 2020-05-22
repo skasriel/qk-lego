@@ -31,6 +31,9 @@ export class Action {
   createBrick(brick) {
     this.brick = brick.save();
   }
+  moveBrick(brick) {
+    this.brick = brick.save();
+  }
   deleteBrick(brick) {
     this.uuid = brick._uuid;
   }
