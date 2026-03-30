@@ -138,8 +138,7 @@ class Scene extends React.Component {
   }*/
 
   _initWS() {
-    //let wsURL = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws-api";
-    let wsURL = 'ws://localhost:5000/ws-api';
+    let wsURL = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws-api";
     console.log("WS Connection to "+wsURL);
     this.ws = new ReconnectingWebSocket(wsURL);
 

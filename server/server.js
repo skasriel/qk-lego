@@ -1,6 +1,10 @@
 const express = require('express');
+const path = require('path');
 const app = express();
 const http = require('http');
+
+// Serve the React client build
+app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
 
 /*const Datastore = require('nedb');
 const db = {};
@@ -23,8 +27,13 @@ class Action {
 }
 
 const fs = require('fs');
-const worldFileName = '../world.json';
+const dataDir = process.env.PLATFORM_APP_DIR ? path.join(process.env.PLATFORM_APP_DIR, 'data') : path.join(__dirname, '..');
+const worldFileName = path.join(dataDir, 'world.json');
 function loadWorldFromDisk() {
+  if (!fs.existsSync(worldFileName)) {
+    console.log(`File ${worldFileName} not found -> starting from empty world`);
+    return;
+  }
   let worldText = fs.readFileSync(worldFileName, 'utf8');
   if (worldText.length==0) {
     console.log(`Empty file ${worldFileName} -> starting from empty world`);
@@ -71,8 +80,16 @@ app.get('/api/get-scene', function(req, res) {
   res.send(response);
   res.end();
 });
+// Serve React app for any non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
+});
+
+const port = process.env.PORT || 5000;
 const server = http.createServer(app);
-server.listen(5000);
+server.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
 
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server, path: '/ws-api'});
