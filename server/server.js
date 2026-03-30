@@ -80,8 +80,12 @@ app.get('/api/get-scene', function(req, res) {
   res.send(response);
   res.end();
 });
-// Serve React app for any non-API routes
+// Serve React app for any non-API, non-file routes (SPA fallback)
 app.get('*', (req, res) => {
+  // Don't serve index.html for requests that look like file paths (models, assets, etc.)
+  if (path.extname(req.path)) {
+    return res.status(404).send('Not found');
+  }
   res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
 });
 

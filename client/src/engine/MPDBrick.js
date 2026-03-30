@@ -189,7 +189,7 @@ function _loadFromLDFile(id, scene) {
       brickTemplatesLoaded++;
     },
     null,
-    (error) => {console.log("Error downloading LD file "+modelFileName+ ": "+error)});
+    (error) => {console.log("Error downloading LD file "+modelFileName+ ": "+error); errorsLoadingTemplates=true;});
 }
 
 

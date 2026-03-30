@@ -78,9 +78,9 @@ class Scene extends React.Component {
     this._initCore();
     this._initEnv();
 
-    let promise1 = MPDBrick.loadAllTemplates(this.scene);
-    let promise2 = GLBBrick.loadAllTemplates(this.scene);
-    let promise3 = OBJBrick.loadAllTemplates(this.scene);
+    let promise1 = MPDBrick.loadAllTemplates(this.scene).catch(e => console.warn('MPD templates failed:', e));
+    let promise2 = GLBBrick.loadAllTemplates(this.scene).catch(e => console.warn('GLB templates failed:', e));
+    let promise3 = OBJBrick.loadAllTemplates(this.scene).catch(e => console.warn('OBJ templates failed:', e));
     Promise.all([promise1, promise2, promise3]).then((result) => {
       this._init();
     });

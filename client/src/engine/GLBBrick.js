@@ -212,7 +212,7 @@ function _loadFromServer(brickTemplate, scene) {
       brickTemplatesLoaded++;
     },
     null,
-    (error) => {console.log("Error downloading GLB file "+modelFileName+ ": "+error)});
+    (error) => {console.log("Error downloading GLB file "+modelFileName+ ": "+error); errorsLoadingTemplates=true;});
 }
 
 

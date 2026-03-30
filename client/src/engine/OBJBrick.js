@@ -151,7 +151,7 @@ function _loadFromServer(brickTemplate, scene) {
       model.scale.copy(new THREE.Vector3(scale, scale, scale));
       brickTemplates[id] = model; // model.isGroup=true;
       brickTemplatesLoaded++;
-    }, null, (error) => {console.log("Error downloading OBJ file "+objFileName+ ": "+error)}
-  )}, null, (error) => {console.log("Error downloading MTL file "+mtlFileName+ ": "+error)}
+    }, null, (error) => {console.log("Error downloading OBJ file "+objFileName+ ": "+error); errorsLoadingTemplates=true;}
+  )}, null, (error) => {console.log("Error downloading MTL file "+mtlFileName+ ": "+error); errorsLoadingTemplates=true;}
   );
 }
