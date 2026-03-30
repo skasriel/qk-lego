@@ -10,7 +10,7 @@ applications:
         # Install server dependencies
         cd server && npm install
         # Build the React client
-        cd ../client && npm install --omit=optional && npm run build
+        cd ../client && npm install --omit=optional && NODE_OPTIONS=--openssl-legacy-provider npm run build
     web:
       commands:
         start: "cd server && node server.js"
