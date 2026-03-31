@@ -341,7 +341,7 @@ function buildMeshFromBlock(block) {
   });
   cylinderMaterial.color.convertSRGBToLinear();
   let group = new THREE.Group();
-  let cube = new THREE.BoxBufferGeometry(block.length*multX, block.height*multY - brickSeparationY /*leave some room above*/, block.width*multZ);
+  let cube = new THREE.BoxGeometry(block.length*multX, block.height*multY - brickSeparationY /*leave some room above*/, block.width*multZ);
   let cubeMesh = new THREE.Mesh( cube, material );
   cubeMesh.position.x = block.length * multX/2;
   cubeMesh.position.y = block.height * multY/2;

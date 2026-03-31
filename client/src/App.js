@@ -1,8 +1,5 @@
-//import './App.css';
-
 import React from 'react';
 import { Provider } from 'react-redux';
-import { AppContainer } from 'react-hot-loader';
 
 import Builder from './components/Builder.jsx';
 import './styles/app.css';
@@ -11,7 +8,7 @@ import { createStore } from 'redux';
 
 import reducer from './reducer';
 
-/*export default*/ function setupStore(initialState) {
+function setupStore(initialState) {
   return createStore(
     reducer,
     initialState,
@@ -20,27 +17,22 @@ import reducer from './reducer';
   );
 }
 
-
 const store = setupStore();
 
 function App() {
   return (
-    <AppContainer>
-      <Provider store={store}>
-        <Builder />
-        <div id="blocker">
-          <div id="instructions">
-            <span style={{fontSsize:'36px'}}>Click to play</span>
-            <br /><br />
-            Move: WASD<br/>
-            Jump: SPACE<br/>
-            Look: MOUSE
-          </div>
+    <Provider store={store}>
+      <Builder />
+      <div id="blocker">
+        <div id="instructions">
+          <span style={{fontSize:'36px'}}>Click to play</span>
+          <br /><br />
+          Move: WASD<br/>
+          Jump: SPACE<br/>
+          Look: MOUSE
         </div>
-        <div id="root"></div>
-
-      </Provider>
-    </AppContainer>
+      </div>
+    </Provider>
   );
 }
 export default App;

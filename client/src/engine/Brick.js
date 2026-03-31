@@ -1,7 +1,6 @@
-import v4 from 'uuid';
+import { v4 } from 'uuid';
 
 import * as THREE from 'three';
-import {_toStringVector3D, _toStringBox3} from '../util';
 import { multX, multY, multZ, ColorCollections } from '../util';
 export const BOUNDINGBOX_OFFSET = 0; //50; // hack: for some reason the bricks are 50 too low on the Y axis
 

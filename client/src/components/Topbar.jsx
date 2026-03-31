@@ -1,10 +1,7 @@
 import React from 'react';
 
 import Button from './Button';
-import ColorPicker from './ColorPicker';
-import {Modes} from '../util'
-
-import {ionicons} from 'ionicons';
+import {Modes} from '../util';
 
 //import styles from '../styles/topbar.css';
 

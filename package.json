@@ -1,19 +1,9 @@
 {
-  "name": "example-create-react-app-express",
+  "name": "qk-lego",
   "version": "1.0.0",
   "scripts": {
-    "client": "cd client && yarn start",
-    "server": "cd server && nodemon server.js",
-    "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn client\""
-  },
-  "dependencies": {
-    "body-parser": "^1.18.3",
-    "express": "^4.16.4",
-    "nedb": "^1.8.0",
-    "ws": "^7.3.0"
-  },
-  "devDependencies": {
-    "concurrently": "^4.1.2",
-    "nodemon": "^2.0.4"
+    "client": "cd client && npm start",
+    "server": "cd server && node --watch server.js",
+    "dev": "npx concurrently --kill-others-on-fail \"npm run server\" \"npm run client\""
   }
 }

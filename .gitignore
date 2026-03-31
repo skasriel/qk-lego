@@ -1,3 +1,4 @@
 node_modules/
 client/build/
 *.log
+world.json

@@ -1,6 +1,5 @@
 import React from 'react';
 
-import Button from './Button';
 import BrickPicker from './BrickPicker.jsx';
 
 //import styles from '../styles/topbar.css';

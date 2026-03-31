@@ -1,7 +1,5 @@
 import React from 'react';
-import { CompactPicker, Compact } from 'react-color';
-
-import { SimpleBrick } from '../components/Icons';
+import { CompactPicker } from 'react-color';
 import { ColorCollections} from '../util';
 
 //import styles from '../styles/color-picker.css';

@@ -1,24 +1,22 @@
 import * as THREE from 'three';
 import React from 'react';
-import If from 'if-only';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 
-import {Brick, BOUNDINGBOX_OFFSET} from './Brick';
+import {BOUNDINGBOX_OFFSET} from './Brick';
 import {BasicBrick} from './BasicBrick';
 import {MPDBrick} from './MPDBrick';
 import {GLBBrick} from './GLBBrick';
 import {OBJBrick} from './OBJBrick';
-import { BrickCollections } from './BrickCollections';
 
 import Message from '../components/Message';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls.js';
-import { FlyControls } from 'three/examples/jsm/controls/FlyControls.js';
 import { MyControl } from './MyControl';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 
 import { multX, multY, multZ, _toStringBox3, _toStringVector3D } from '../util';
-import {ColorCollections, Modes, Action} from '../util';
+import {Modes, Action} from '../util';
+
+const If = ({ cond, children }) => cond ? children : null;
 
 let styles = {};
 const worldSize = 100000;
@@ -211,7 +209,7 @@ class Scene extends React.Component {
     renderer.setSize( window.innerWidth, window.innerHeight );
     //renderer.gammaInput = true;
     //renderer.gammaOutput = true;
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     if (USE_SHADOWS) {
       renderer.shadowMap.enabled = true;
@@ -331,7 +329,7 @@ class Scene extends React.Component {
     const ambientLight = new THREE.AmbientLight(0x606060);
     this.scene.add(ambientLight);
 
-    const geometry = new THREE.PlaneBufferGeometry( worldSize, worldSize );
+    const geometry = new THREE.PlaneGeometry( worldSize, worldSize );
     geometry.rotateX( - Math.PI / 2 );
     const planeMaterial = new THREE.ShadowMaterial();
     planeMaterial.opacity = 1.0;

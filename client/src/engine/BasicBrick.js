@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { multX, multY, multZ } from '../util';
 import {Brick} from './Brick';
 import {MPDBrick} from './MPDBrick';
@@ -20,41 +21,29 @@ export class BasicBrick extends Brick {
     const mat = Brick.getMaterial(color, colorType);
 
     const geo = new THREE.BoxGeometry( width*multX, height*multY, depth*multZ );
-    const cubeMesh = new THREE.Mesh(geo, mat);
-    if (USE_SHADOWS) {
-      cubeMesh.castShadow = true;
-      cubeMesh.receiveShadow = true;
-    }
 
-    const meshes=[cubeMesh];
+    const geometries = [geo.clone()];
     const knobSize = 28;
     const cylinderGeo = new THREE.CylinderGeometry( knobSize, knobSize, knobSize, 12);
 
-    for ( var i = 0; i < width; i++ ) {
-      for ( var j = 0; j < depth; j++ ) {
-        const cylinder = new THREE.Mesh(cylinderGeo, mat);
-        cylinder.position.x = multX * i - ((width - 1) * multX / 2);
-        cylinder.position.y = height*multY/2 + knobSize/2;
-        cylinder.position.z = multZ * j - ((depth - 1) * multZ / 2);
-        if (USE_SHADOWS) {
-          cylinder.castShadow = true;
-          cylinder.receiveShadow = true;
-        }
-        meshes.push( cylinder );
+    for ( let i = 0; i < width; i++ ) {
+      for ( let j = 0; j < depth; j++ ) {
+        const knob = cylinderGeo.clone();
+        knob.translate(
+          multX * i - ((width - 1) * multX / 2),
+          height*multY/2 + knobSize/2,
+          multZ * j - ((depth - 1) * multZ / 2)
+        );
+        geometries.push(knob);
       }
     }
 
-    var combined = new THREE.Geometry();
-    for (var i = 0; i < meshes.length; i++) {
-      meshes[i].updateMatrix();
-      combined.merge(meshes[i].geometry, meshes[i].matrix);
-    }
-
+    const combined = BufferGeometryUtils.mergeGeometries(geometries);
     let model = new THREE.Mesh(combined, mat);
 
-    var edgeGeo = new THREE.EdgesGeometry( model.geometry ); // or WireframeGeometry
-    var edgeMat = new THREE.LineBasicMaterial( { color: 0x333333, linewidth: 1 } );
-    var wireframe = new THREE.LineSegments( edgeGeo, edgeMat );
+    const edgeGeo = new THREE.EdgesGeometry( model.geometry );
+    const edgeMat = new THREE.LineBasicMaterial( { color: 0x333333, linewidth: 1 } );
+    const wireframe = new THREE.LineSegments( edgeGeo, edgeMat );
     model.add( wireframe );
 
     if (USE_SHADOWS) {
@@ -83,16 +72,12 @@ export class BasicBrick extends Brick {
     switch (brickTemplate.type) {
       case BrickCollections.basicBrick:
         return new BasicBrick(brickTemplate.id, color, colorType, brickTemplate.width, brickTemplate.height, brickTemplate.depth);
-        break;
       case BrickCollections.mpdBrick:
         return new MPDBrick(brickTemplate.id, color, colorType);
-        break;
       case BrickCollections.glbBrick:
         return new GLBBrick(brickTemplate.id, color, colorType);
-        break;
       case BrickCollections.objBrick:
-      return new OBJBrick(brickTemplate.id, color, colorType);
-      break;
+        return new OBJBrick(brickTemplate.id, color, colorType);
       default:
         console.log("Unknown brick type: "+brickTemplate.type);
         break;
@@ -100,7 +85,6 @@ export class BasicBrick extends Brick {
   }
 
 
-  /* Create a JSON representation of this brick for saving to server / localStorage */
   save() {
     let state = super.save();
     state = {...state,
@@ -113,12 +97,11 @@ export class BasicBrick extends Brick {
     return state;
   }
 
-  /* Create a new brick based on data from server / localStorage */
   static load(state) {
     let brick = new BasicBrick(state.brickID, state.color, state.colorType, state.width, state.height, state.depth);
-    if (state.uuid)  brick._uuid = state.uuid; // override uuid when creating brick from server
+    if (state.uuid)  brick._uuid = state.uuid;
     brick.setPosition(state.position, true);
-    if (state.angle != 0) {
+    if (state.angle !== 0) {
       brick.rotateY(state.angle);
     }
     return brick;

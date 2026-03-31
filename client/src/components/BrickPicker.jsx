@@ -1,10 +1,9 @@
 import React from 'react';
-import If from 'if-only';
 import isEqual from 'lodash/isEqual';
 
 import {BrickCollections} from '../engine/BrickCollections';
 
-import { CarouselProvider, Slider, Slide, ButtonBack, ButtonNext, ButtonFirst, ButtonLast, DotGroup } from 'pure-react-carousel';
+import { CarouselProvider, Slider, Slide, ButtonBack, ButtonNext, ButtonFirst, ButtonLast } from 'pure-react-carousel';
 import 'pure-react-carousel/dist/react-carousel.es.css';
 
 let styles = {};

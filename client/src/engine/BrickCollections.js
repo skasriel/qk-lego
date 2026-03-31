@@ -1,6 +1,3 @@
-import {BasicBrick} from './BasicBrick';
-import {MPDBrick} from './MPDBrick';
-
 // see https://www.bricklink.com/catalogList.asp?catType=P&catString=130
 export class BrickCollections {
   static basicBrick = 'basic';

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 import { Brick, BOUNDINGBOX_OFFSET } from './Brick';
-import {multX, multY, multZ, _toStringVector3D, _toStringBox3} from '../util';
+// multX, multY, multZ, _toStringVector3D, _toStringBox3 available from '../util' if needed
 import { DDSLoader } from 'three/examples/jsm/loaders/DDSLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
@@ -50,7 +50,7 @@ export class OBJBrick extends Brick {
     let width = boundingBox.max.x - boundingBox.min.x;
     let height = boundingBox.max.y - boundingBox.min.y;
     let depth = boundingBox.max.z - boundingBox.min.z;
-    let geo = new THREE.BoxBufferGeometry(width, height, depth);
+    let geo = new THREE.BoxGeometry(width, height, depth);
     OBJBrick.ghostBlockMaterial.color = new THREE.Color(0x222244);
     let ghostMesh = new THREE.Mesh(geo, OBJBrick.ghostBlockMaterial); //new SKBoxHelper(brickMesh); //new THREE.BoxHelper( brickMesh, 0x00ff00 );///
     ghostMesh.position.copy(model.position);

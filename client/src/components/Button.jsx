@@ -41,7 +41,7 @@ styles.text = {
 
 const Button = ({ text, icon, active, onClick }) => (
   <div style={active ? styles.active : styles.button} onClick={onClick}>
-    <ion-icon name="${icon}"></ion-icon>
+    <ion-icon name={icon}></ion-icon>
     <div style={styles.text}>
       {text}
     </div>
