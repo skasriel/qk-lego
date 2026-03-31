@@ -18,6 +18,8 @@ import {Modes, Action} from '../util';
 
 const If = ({ cond, children }) => cond ? children : null;
 
+THREE.ColorManagement.enabled = false;
+
 let styles = {};
 const worldSize = 100000;
 
@@ -358,8 +360,8 @@ class Scene extends React.Component {
 
   _getRollOverBrick() { // returns the rollover brick and its ghost block
     if (!this.rollOverBrick) {
-      const {brickID, color, colorType} = this.props;
-      const brick = BasicBrick.createBrick(brickID.id, color, colorType);
+      const {brickID, brickColor, colorType} = this.props;
+      const brick = BasicBrick.createBrick(brickID.id, brickColor, colorType);
       /*BrickCollections.defaultBrick.id,
         ColorCollections.getDefaultColor(),
         ColorCollections.getDefaultColorType());*/
@@ -383,7 +385,7 @@ class Scene extends React.Component {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.controls.handleResize();
+    if (this.controls.handleResize) this.controls.handleResize();
     this._needsRendering = true;
   }
 
