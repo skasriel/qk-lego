@@ -9,7 +9,7 @@
     "@testing-library/user-event": "^14.5.0",
     "file-saver": "^2.0.5",
     "ionicons": "^7.2.0",
-    "lodash": "^4.17.21",
+    "lodash": "^4.18.1",
     "normalize.css": "^8.0.1",
     "pubsub-js": "^1.9.4",
     "pure-react-carousel": "^1.30.1",
