@@ -12,8 +12,8 @@ function setupStore(initialState) {
   return createStore(
     reducer,
     initialState,
-    (window.window.__REDUX_DEVTOOLS_EXTENSION__ && process.env.NODE_ENV === 'development') ?
-      window.window.__REDUX_DEVTOOLS_EXTENSION__() : f => f
+    (window.__REDUX_DEVTOOLS_EXTENSION__ && import.meta.env.DEV) ?
+      window.__REDUX_DEVTOOLS_EXTENSION__() : f => f
   );
 }
 
