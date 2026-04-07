@@ -309,26 +309,20 @@ class Scene extends React.Component {
   }
 
   _initEnv() {
-    /*const light = new THREE.SpotLight(0xffffff);
-    light.position.set(-40*multX, 200*multY, -20*multZ );
-    light.intensity = 0.6;
-    light.castShadow = true;
-    light.shadow = new THREE.LightShadow( new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 10000) );
-    light.shadow.bias = - 0.0000022;
-    light.shadow.mapSize.width = 4096;
-    light.shadow.mapSize.height = 4096;
-    light.penumbra = 0.5;
-    light.decay = 2;
-    this.scene.add(light);*/
+    // Main directional light - creates highlights and shadows to show true colors
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    directionalLight.position.set(50, 200, 100);
+    directionalLight.castShadow = false;
+    this.scene.add(directionalLight);
 
-    // var spotLightHelper = new THREE.SpotLightHelper( light );
-    // this.scene.add( spotLightHelper );
+    // Fill light from opposite side - softens shadows
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    fillLight.position.set(-50, 100, -50);
+    this.scene.add(fillLight);
 
-    //const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-    //this.scene.add( directionalLight );
-
-
-    const ambientLight = new THREE.AmbientLight(0x606060);
+    // Ambient light - provides base illumination so dark areas aren't black
+    // Reduced intensity to let directional lights show the true colors
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(ambientLight);
 
     const geometry = new THREE.PlaneGeometry( worldSize, worldSize );
