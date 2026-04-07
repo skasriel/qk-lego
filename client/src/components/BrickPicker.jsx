@@ -2,56 +2,51 @@ import React from 'react';
 import isEqual from 'lodash/isEqual';
 
 import {BrickCollections} from '../engine/BrickCollections';
-
-import { CarouselProvider, Slider, Slide, ButtonBack, ButtonNext, ButtonFirst, ButtonLast } from 'pure-react-carousel';
-import 'pure-react-carousel/dist/react-carousel.es.css';
+import {RebrickableParts, RebrickableCategories} from '../engine/RebrickableData';
 
 let styles = {};
 
-styles.brick = {
-  color: '#FFFFFF',
-  height: '60px',
-  //display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-}
-styles.brickIcon = {
-  height: '40px',
-}
 styles.picker = {
   position: 'relative',
-  top: '0px',
-  left: '0px',
-  padding: '15px',
-  background: '#22386E',
-  //display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxShadow: '0px 5px 5px rgba(0, 0, 0, 0.15)',
-  borderRadius: '4px',
-  border: '1px solid #08173D',
+  display: 'flex',
+  height: '180px',
+  background: 'rgba(15, 23, 42, 0.95)',
+  backdropFilter: 'blur(12px)',
+  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
 }
-
-styles.picker.after = {
-  content: ' ',
-  position: 'absolute',
-  top: '-7px',
-  left: '15px',
-  borderLeft: '7px solid transparent !important',
-  borderRight: '7px solid transparent !important',
-  borderBottomWidth: '7px',
-  borderBottomStyle: 'solid',
-  borderColor: '#22386E',
+styles.categoryList = {
+  width: '180px',
+  overflowY: 'auto',
+  overflowX: 'hidden',
+  borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+  backgroundColor: 'rgba(0, 0, 0, 0.2)',
 }
-styles.brickExample = {
-  marginRight: '15px',
-  //display: 'flex',
-  //flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
+styles.categoryItem = {
+  padding: '10px 15px',
+  cursor: 'pointer',
+  color: 'rgba(255, 255, 255, 0.7)',
+  fontSize: '0.85em',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+  transition: 'all 0.2s',
 }
-styles.brickExample.lastChild = {
-  marginRight: '0',
+styles.categoryItemActive = {
+  padding: '10px 15px',
+  cursor: 'pointer',
+  color: '#FFFFFF',
+  fontSize: '0.85em',
+  backgroundColor: 'rgba(96, 165, 250, 0.2)',
+  borderLeft: '3px solid #60a5fa',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+}
+styles.partsGrid = {
+  flex: 1,
+  overflowY: 'auto',
+  overflowX: 'hidden',
+  padding: '10px',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+  gap: '8px',
+  alignContent: 'start',
 }
 styles.brickThumb = {
   height: '50px',
@@ -61,44 +56,26 @@ styles.brickThumb = {
   borderRadius: '10px',
   boxShadow: '0px 3px 7px rgba(0, 0, 0, 0.6)',
   transition: 'all 0.15s ease-in-out',
-}
-styles.brickThumb.hover = {
-  transform: 'translateY(-2px)',
-  boxShadow: '0px 5px 10px rgba(0, 0, 0, 0.4)',
-}
-styles.selected = {
-  composes: 'brickThumb',
-  height: '50px',
-  marginBottom: '7.5px',
-  padding: '7.5px',
-  borderRadius: '10px',
-  boxShadow: '0px 3px 7px rgba(0, 0, 0, 0.6)',
-  transition: 'all 0.15s ease-in-out',
-  backgroundColor: '#A0CCFF',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 }
 styles.label = {
   color: '#FFFFFF',
 }
 
-let selectedCollection = "Bricks";
-
-
-
 function displayNameFromID(brickID) {
-  return "Brick #"+brickID; //`${dimensions.x}x${dimensions.z}`
-}
-function getBrickIconFromID(brickTemplate) {
-  //console.log(`getBrickIcon with ${JSON.stringify(brickTemplate)}`);
-  if (brickTemplate.type==BrickCollections.basicBrick) {
-    return `${brickTemplate.width}x${brickTemplate.height}x${brickTemplate.depth} (#${brickTemplate.id})`;
-  } else {
-    return "#"+brickTemplate.id;
+  for (const category of Object.values(RebrickableParts)) {
+    const found = category.find(p => p.id === String(brickID));
+    if (found) return found.name;
   }
+  return "Brick #"+brickID;
 }
 
 class BrickPicker extends React.Component {
   state = {
     open: true,
+    selectedCategory: 'Bricks',
   }
 
   constructor(props) {
@@ -118,54 +95,76 @@ class BrickPicker extends React.Component {
 
   render() {
     const { selectedID, handleSetBrick } = this.props;
-    const { open } = this.state;
+    const { selectedCategory } = this.state;
+    const categories = RebrickableCategories;
+    const currentParts = RebrickableParts[selectedCategory] || [];
+    
     return (
       <div style={styles.picker} ref={(picker) => this.picker = picker}>
-        <CarouselProvider
-          naturalSlideWidth={100}
-          naturalSlideHeight={50}
-          visibleSlides={12}
-          totalSlides={BrickCollections.getNumberOfBricks()}>
-          <Slider>
-
-          {BrickCollections.getAllBricks().map((b, i) => (
-            <Slide key={i} index={i}>
-            <div key={i} style={styles.brickExample}>
-                <div style={isEqual(selectedID, b) ? styles.selected : styles.brickThumb} onClick={() => this._handleChangeBrick(b)}>
-                  {getBrickIconFromID(b)}
-                </div>
-                <div style={styles.label}>
-                  {displayNameFromID(b)}
-                </div>
+        <div style={styles.categoryList}>
+          {categories.map(cat => (
+            <div
+              key={cat}
+              onClick={() => this.setState({ selectedCategory: cat })}
+              style={selectedCategory === cat ? styles.categoryItemActive : styles.categoryItem}
+              onMouseEnter={(e) => {
+                if (selectedCategory !== cat) {
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedCategory !== cat) {
+                  e.target.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              {cat}
             </div>
-            </Slide>
           ))}
-          </Slider>
-          <ButtonFirst>First</ButtonFirst>
-          <ButtonBack>Back</ButtonBack>
-          <ButtonNext>Next</ButtonNext>
-          <ButtonLast>Last</ButtonLast>
-        </CarouselProvider>
+        </div>
+
+        <div style={styles.partsGrid}>
+          {currentParts.map((b, i) => (
+            <div key={i} style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => this._handleChangeBrick(b)}>
+              <div style={{
+                ...styles.brickThumb,
+                backgroundColor: selectedID.id == b.id ? '#60a5fa' : '#FFFFFF',
+                border: selectedID.id == b.id ? '2px solid #3b82f6' : '1px solid rgba(0,0,0,0.2)',
+              }}>
+                <div style={{ fontSize: '0.7em', fontWeight: 'bold', color: '#333' }}>{b.id}</div>
+              </div>
+              <div style={{ ...styles.label, fontSize: '0.7em', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {b.name}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
-  /*
-    <div style={styles.brick} onClick={this._togglePicker}>
-      <div style={styles.brickIcon}>
-        {getBrickIconFromID(selectedID)}
-      </div>
-    </div>
-    <If cond={open}>
-    </If>
-  */
-
-
-  _handleChangeBrick(brickID) {
-    console.log("_handle "+brickID);
+  _handleChangeBrick(brickData) {
+    console.log("_handle ", brickData);
     const { handleSetBrick } = this.props;
-    handleSetBrick(brickID);
-    //this._togglePicker();
+    
+    let width = 2, height = 3, depth = 4;
+    const name = brickData.name || '';
+    const match = name.match(/(\d+)\s*x\s*(\d+)(?:\s*x\s*(\d+))?/);
+    if (match) {
+      width = parseInt(match[1]);
+      depth = parseInt(match[2]);
+      height = match[3] ? parseInt(match[3]) * 3 : 3;
+    }
+    
+    const brick = {
+      id: brickData.id,
+      type: 'basic',
+      width: width,
+      height: height,
+      depth: depth,
+    };
+    
+    handleSetBrick(brick);
   }
 
   _togglePicker() {
@@ -182,6 +181,5 @@ class BrickPicker extends React.Component {
     }
   }
 }
-
 
 export default BrickPicker;

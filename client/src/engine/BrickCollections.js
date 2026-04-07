@@ -1,3 +1,5 @@
+import {RebrickablePartsFlat} from './RebrickableData';
+
 // see https://www.bricklink.com/catalogList.asp?catType=P&catString=130
 export class BrickCollections {
   static basicBrick = 'basic';
@@ -39,16 +41,8 @@ export class BrickCollections {
       {type: BrickCollections.basicBrick, id: 3857, width: 16, height: 1, depth: 32},
       {type: BrickCollections.basicBrick, id: 3811, width: 32, height: 1, depth: 32}
     ],
-    "Animals": [
-      {type: BrickCollections.mpdBrick, id: 13392, description: 'Dolphin'}
-    ],
-    "Characters": [
-      {type: BrickCollections.glbBrick, id:-1, path: '/models/qk_character1.glb'},
-      {type: BrickCollections.objBrick, id:-2, mtl: '/models/characters/pirate-obj/pirate.mtl', obj: '/models/characters/pirate-obj/pirate.obj', scale: 4},
-      {type: BrickCollections.objBrick, id:-3, mtl: '/models/characters/AnotherOne/lego_obj.mtl', obj: '/models/characters/AnotherOne/lego_obj.obj'},
-      {type: BrickCollections.objBrick, id:-4, mtl: '/models/characters/Legoman/LegoMan.mtl', obj: '/models/characters/Legoman/LegoMan.obj', scale: 100},
-
-    ]
+    "Animals": [],
+    "Characters": []
     /*
     "Doors & Windows" : [
       '60592', '86209', '4035', '60594', 6154, 4131
@@ -69,7 +63,29 @@ export class BrickCollections {
 
   static getBrickFromID(id) {
     let brickTemplate = BrickCollections.getAllBricks().find(template => {return template.id == id});
-    return brickTemplate;
+    if (brickTemplate) return brickTemplate;
+    
+    // Try Rebrickable data
+    const rebrickablePart = RebrickablePartsFlat.find(p => p.id == id);
+    if (rebrickablePart) {
+      // Parse dimensions from name
+      let width = 2, height = 3, depth = 2;
+      const match = rebrickablePart.name.match(/(\d+)\s*x\s*(\d+)(?:\s*x\s*(\d+))?/);
+      if (match) {
+        width = parseInt(match[1]);
+        depth = parseInt(match[2]);
+        height = match[3] ? parseInt(match[3]) * 3 : 3;
+      }
+      return {
+        id: rebrickablePart.id,
+        type: BrickCollections.basicBrick,
+        width: width,
+        height: height,
+        depth: depth,
+      };
+    }
+    
+    return null;
   }
 
   static getNumberOfBricks() {

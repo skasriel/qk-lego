@@ -43,6 +43,7 @@ styles.scene = {
   width: '100%',
   pointerEvents: 'none',
   transition: 'transform 0.15s ease-in-out',
+  zIndex: 1,
 }
 styles.shifted = {
   composes: 'scene',

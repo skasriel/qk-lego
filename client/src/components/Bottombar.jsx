@@ -10,14 +10,15 @@ styles.bottombar = {
   position: 'absolute',
   bottom: 0,
   left: 0,
-  //display: 'flex',
-  alignItems: 'center',
-  //justifyContent: 'flex-start',
   width: '100%',
   zIndex: 9,
-  background: '#08173D',
-  boxShadow: '0px 3px 12px rgba(0, 0, 0, 0.15)',
-  transition: 'all 0.15s ease-in-out',
+  background: 'rgba(15, 23, 42, 0.9)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+  boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.3), 0 -2px 4px -1px rgba(0, 0, 0, 0.2)',
+  transition: 'all 0.2s ease',
+  padding: '8px 0',
 };
 
 styles.section = {

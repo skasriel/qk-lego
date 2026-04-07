@@ -3,6 +3,9 @@ const path = require('path');
 const app = express();
 const http = require('http');
 
+// Enable JSON parsing for POST requests
+app.use(express.json());
+
 // Serve the React client build
 app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
 
@@ -24,11 +27,18 @@ class Action {
   static Move = 'Move';
   static Clone = 'Clone';
   static Reload = 'Reload';
+  static Reset = 'Reset';
 }
 
 const fs = require('fs');
 const dataDir = process.env.PLATFORM_APP_DIR ? path.join(process.env.PLATFORM_APP_DIR, 'data') : path.join(__dirname, '..');
 const worldFileName = path.join(dataDir, 'world.json');
+const scenesDir = path.join(dataDir, 'scenes');
+
+// Ensure scenes directory exists
+if (!fs.existsSync(scenesDir)) {
+  fs.mkdirSync(scenesDir, { recursive: true });
+}
 function loadWorldFromDisk() {
   if (!fs.existsSync(worldFileName)) {
     console.log(`File ${worldFileName} not found -> starting from empty world`);
@@ -80,6 +90,143 @@ app.get('/api/get-scene', function(req, res) {
   res.send(response);
   res.end();
 });
+
+/**
+ * Reset scene - clear all bricks
+ */
+app.post('/api/reset', function(req, res) {
+  bricks = [];
+  saveWorldToDisk();
+  console.log('Reset scene via API - cleared all bricks');
+  
+  // Broadcast reset to all connected clients
+  const resetAction = {
+    type: Action.Reset,
+    worldHash: getWorldSignature(),
+  };
+  wss.clients.forEach(function each(client) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(resetAction));
+    }
+  });
+  
+  res.json({ success: true });
+});
+
+/**
+ * Save current scene with a name
+ */
+app.post('/api/scenes/save', function(req, res) {
+  const { name } = req.body;
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    return res.status(400).json({ error: 'Scene name is required' });
+  }
+  
+  // Sanitize filename
+  const safeName = name.trim().replace(/[^a-z0-9_\-\.]/gi, '_').substring(0, 100);
+  const sceneFile = path.join(scenesDir, `${safeName}.json`);
+  
+  const sceneData = {
+    version: FILE_VERSION_CURRENT,
+    name: name,
+    savedAt: new Date().toISOString(),
+    numberBricks: bricks.length,
+    world: bricks,
+  };
+  
+  try {
+    fs.writeFileSync(sceneFile, JSON.stringify(sceneData, null, 2));
+    console.log(`Saved scene "${name}" to ${sceneFile}`);
+    res.json({ success: true, name: name, path: safeName });
+  } catch (err) {
+    console.error(`Failed to save scene: ${err}`);
+    res.status(500).json({ error: 'Failed to save scene' });
+  }
+});
+
+/**
+ * List all saved scenes
+ */
+app.get('/api/scenes/list', function(req, res) {
+  try {
+    const files = fs.readdirSync(scenesDir);
+    const scenes = files
+      .filter(f => f.endsWith('.json'))
+      .map(f => {
+        const filePath = path.join(scenesDir, f);
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        return {
+          name: data.name || f.replace('.json', ''),
+          filename: f.replace('.json', ''),
+          savedAt: data.savedAt,
+          numberBricks: data.numberBricks || 0,
+        };
+      })
+      .sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+    
+    res.json({ scenes });
+  } catch (err) {
+    console.error(`Failed to list scenes: ${err}`);
+    res.status(500).json({ error: 'Failed to list scenes' });
+  }
+});
+
+/**
+ * Load a saved scene by name
+ */
+app.get('/api/scenes/load/:name', function(req, res) {
+  const { name } = req.params;
+  const safeName = name.replace(/[^a-z0-9_\-\.]/gi, '_');
+  const sceneFile = path.join(scenesDir, `${safeName}.json`);
+  
+  if (!fs.existsSync(sceneFile)) {
+    return res.status(404).json({ error: 'Scene not found' });
+  }
+  
+  try {
+    const sceneData = JSON.parse(fs.readFileSync(sceneFile, 'utf8'));
+    if (sceneData.version !== FILE_VERSION_CURRENT) {
+      return res.status(400).json({ error: 'Incompatible scene version' });
+    }
+    
+    // Load into current world
+    bricks = sceneData.world || [];
+    saveWorldToDisk();
+    
+    console.log(`Loaded scene "${sceneData.name}" with ${bricks.length} bricks`);
+    res.json({ 
+      success: true, 
+      name: sceneData.name,
+      world: bricks,
+      worldHash: getWorldSignature()
+    });
+  } catch (err) {
+    console.error(`Failed to load scene: ${err}`);
+    res.status(500).json({ error: 'Failed to load scene' });
+  }
+});
+
+/**
+ * Delete a saved scene
+ */
+app.delete('/api/scenes/:name', function(req, res) {
+  const { name } = req.params;
+  const safeName = name.replace(/[^a-z0-9_\-\.]/gi, '_');
+  const sceneFile = path.join(scenesDir, `${safeName}.json`);
+  
+  if (!fs.existsSync(sceneFile)) {
+    return res.status(404).json({ error: 'Scene not found' });
+  }
+  
+  try {
+    fs.unlinkSync(sceneFile);
+    console.log(`Deleted scene "${name}"`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(`Failed to delete scene: ${err}`);
+    res.status(500).json({ error: 'Failed to delete scene' });
+  }
+});
 // Serve React app for any non-API, non-file routes (SPA fallback)
 app.get('*', (req, res) => {
   // Don't serve index.html for requests that look like file paths (models, assets, etc.)
@@ -89,7 +236,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
 });
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5001;
 const server = http.createServer(app);
 server.listen(port, () => {
   console.log(`Server listening on port ${port}`);
@@ -155,6 +302,11 @@ wss.on('connection', function connection(ws) {
         brickToMove.position.x = action.brick.position.x;
         brickToMove.position.y = action.brick.position.y;
         brickToMove.position.z = action.brick.position.z;
+        break;
+      case Action.Reset:
+        bricks = [];
+        saveWorldToDisk();
+        console.log("Reset scene - cleared all bricks");
         break;
       default:
         console.log("Action type not supported yet: "+action.type);

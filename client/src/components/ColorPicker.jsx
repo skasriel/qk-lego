@@ -8,9 +8,10 @@ let styles = {};
 
 styles.colorPicker = {
   position: 'relative',
-  width: '120px',
+  width: '200px',
   display: 'flex',
-  justifyContent: 'center',
+  justifyContent: 'flex-start',
+  paddingLeft: '10px',
 }
 styles.brick = {
   width: '35px',
@@ -62,7 +63,7 @@ class ColorPicker extends React.Component {
     return (
       <div style={styles.colorPicker}>
         <div style={styles.visible} ref={(picker) => this.picker = picker}>
-          Solid Colors<br/>
+          <div style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8em', fontWeight: '500', marginBottom: '6px' }}>Solid Colors</div>
           <CompactPicker
             color={color}
             colors={ColorCollections.SolidColors}
@@ -70,7 +71,7 @@ class ColorPicker extends React.Component {
             onSwatchHover={(color) => this.setState({ background: color.hex })}
           />
 
-          <br/><br/>Transparent Colors<br/>
+          <div style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8em', fontWeight: '500', marginTop: '12px', marginBottom: '6px' }}>Transparent Colors</div>
           <CompactPicker
             color={color}
             colors={ColorCollections.TransparentColors}
@@ -78,7 +79,7 @@ class ColorPicker extends React.Component {
             onSwatchHover={(color) => this.setState({ background: color.hex })}
           />
 
-          <br/><br/>Metallic Colors<br/>
+          <div style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8em', fontWeight: '500', marginTop: '12px', marginBottom: '6px' }}>Metallic Colors</div>
           <CompactPicker
             color={color}
             colors={ColorCollections.MetallicColors}

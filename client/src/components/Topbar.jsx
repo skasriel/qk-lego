@@ -16,9 +16,12 @@ styles.topbar = {
   justifyContent: 'flex-start',
   width: '100%',
   zIndex: 9,
-  background: '#08173D',
-  boxShadow: '0px 3px 12px rgba(0, 0, 0, 0.15)',
-  transition: 'all 0.15s ease-in-out',
+  background: 'rgba(15, 23, 42, 0.9)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
+  transition: 'all 0.2s ease',
 };
 
 styles.section = {
@@ -42,10 +45,12 @@ styles.rightSection = {
   marginLeft: 'auto',
 }
 styles.title = {
-  color: '#FFFFFF',
-  padding: '15px',
-  textTransform: 'uppercase',
-  fontSize: '1em',
+  color: 'rgba(255, 255, 255, 0.9)',
+  padding: '0 20px',
+  textTransform: 'none',
+  fontSize: '0.9em',
+  fontWeight: '600',
+  letterSpacing: '0.02em',
 }
 
 

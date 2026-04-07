@@ -89,10 +89,12 @@ export class Brick {
 
 
   static getMaterial(color, colorType) {
+   // Default to white if color is undefined
+   const safeColor = color || '#FFFFFF';
    switch (colorType) {
      case ColorCollections.colorTypes.Solid:
        return new THREE.MeshPhongMaterial( {
-         color: color,
+         color: safeColor,
          polygonOffset: true,
          polygonOffsetFactor: 1, // positive value pushes polygon further away
          polygonOffsetUnits: 1
