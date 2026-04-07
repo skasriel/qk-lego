@@ -6,13 +6,14 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { BrickCollections } from './BrickCollections';
 
 let brickTemplates = {};
-let brickTemplatesLoaded=0, brickTemplatesToLoad=0;
-let errorsLoadingTemplates=false;
+let brickTemplatesLoaded = 0,
+  brickTemplatesToLoad = 0;
+let errorsLoadingTemplates = false;
 let timeLoadingTemplates;
-let staticCounter=0;
+let staticCounter = 0;
 const glbScale = 6;
 
-const USE_SHADOWS=false;
+const USE_SHADOWS = false;
 
 export class GLBBrick extends Brick {
   static ghostBlockMaterial = new THREE.MeshBasicMaterial();
@@ -21,27 +22,25 @@ export class GLBBrick extends Brick {
   constructor(brickID, color, colorType) {
     let model = brickTemplates[brickID].clone();
     super(brickID, color, colorType, model);
-    if (model.geometry)
-      model.geometry.computeBoundingBox();
+    if (model.geometry) model.geometry.computeBoundingBox();
 
-    model.name = "GLB "+brickID+" #"+(staticCounter++);
+    model.name = 'GLB ' + brickID + ' #' + staticCounter++;
     if (USE_SHADOWS) {
       model.castShadow = true;
       model.receiveShadow = true;
     }
 
     const material = Brick.getMaterial(color, colorType);
-    let i=0
-    this.model.traverse( (child) => {
+    let i = 0;
+    this.model.traverse((child) => {
       if (child.material) {
         console.log(`Material for child ${i} = ${JSON.stringify(child.material)}`);
-        i++
+        i++;
         child.material = material;
         //child.material.clone();
         //child.material.setValues({color: color});
       }
     });
-
 
     this.materials = brickTemplates[brickID].materials;
     this.setColor(color);
@@ -56,7 +55,7 @@ export class GLBBrick extends Brick {
     let ghostMesh = new THREE.Mesh(geo, GLBBrick.ghostBlockMaterial); //new SKBoxHelper(brickMesh); //new THREE.BoxHelper( brickMesh, 0x00ff00 );///
     ghostMesh.position.copy(model.position);
     ghostMesh.position.y += BOUNDINGBOX_OFFSET; // HACK
-    ghostMesh.name = "Bounding Box for object "+model.name;
+    ghostMesh.name = 'Bounding Box for object ' + model.name;
     ghostMesh.brick = this;
     model.block = ghostMesh;
     this.ghostBlock = ghostMesh;
@@ -65,20 +64,17 @@ export class GLBBrick extends Brick {
   setColor(color) {
     //const material = this.materials[0].clone();
     //material.setValues({color: color});
-    this.model.traverse( (child) => {
+    this.model.traverse((child) => {
       if (child.material) {
-        child.material.setValues({color: color});
+        child.material.setValues({ color: color });
       }
     });
   }
 
-
   /* Create a JSON representation of this brick for saving to server / localStorage */
   save() {
     let state = super.save();
-    state = {...state,
-      brickType: GLBBrick.BrickType,
-    };
+    state = { ...state, brickType: GLBBrick.BrickType };
     return state;
   }
 
@@ -95,7 +91,7 @@ export class GLBBrick extends Brick {
     brick.ghostBlock.position.y = state.position.y; // TODO: needs to be fixed
     brick.ghostBlock.position.z = state.position.z;
     //brick.setPosition(state.position, true);
-    if (state.uuid)  brick._uuid = state.uuid; // override uuid when creating brick from server
+    if (state.uuid) brick._uuid = state.uuid; // override uuid when creating brick from server
     return brick;
   }
 
@@ -116,7 +112,8 @@ export class GLBBrick extends Brick {
           }
         }
       }
-      let tick = setInterval(() => { // HACK - lazy way of doing this - just poll until we've loaded all templates
+      let tick = setInterval(() => {
+        // HACK - lazy way of doing this - just poll until we've loaded all templates
         if (GLBBrick.areTemplatesReady()) {
           clearInterval(tick);
           resolve('Done loading all templates');
@@ -126,29 +123,30 @@ export class GLBBrick extends Brick {
         } else {
           const currentTime = new Date();
           const elapsed = currentTime - timeLoadingTemplates;
-          if (elapsed > 1000 * 60) { // number of milliseconds
+          if (elapsed > 1000 * 60) {
+            // number of milliseconds
             clearInterval(tick);
             reject('time out loading GLB templates');
           }
         }
-      }, 100)
+      }, 100);
     });
   }
-
 }
-
 
 function _loadFromServer(brickTemplate, scene) {
   const id = brickTemplate.id;
   const modelFileName = brickTemplate.path;
-  console.log("Loading GLTF template: "+modelFileName);
+  console.log('Loading GLTF template: ' + modelFileName);
 
   let loader = new GLTFLoader();
   //lDrawLoader.separateObjects = false; // todo
   //lDrawLoader.smoothNormals = true; // todo
 
-  loader.load(modelFileName, function(gltf) {
-      console.log("Loaded model "+id);
+  loader.load(
+    modelFileName,
+    function (gltf) {
+      console.log('Loaded model ' + id);
 
       let model = gltf.scene; // THREE.Group
       /*gltf.animations; // Array<THREE.AnimationClip>
@@ -157,11 +155,10 @@ function _loadFromServer(brickTemplate, scene) {
 		    gltf.cameras; // Array<THREE.Camera>
         gltf.asset; // Object*/
 
-        /*console.log(`GLTF scene ${JSON.stringify(model)}`);
+      /*console.log(`GLTF scene ${JSON.stringify(model)}`);
         console.log(`GLTF scenes ${JSON.stringify(gltf.scenes)}`);
         console.log(`GLTF asset ${JSON.stringify(gltf.asset)}`);
         console.log(`GLTF animation ${JSON.stringify(gltf.animations)}`);*/
-
 
       // Convert from LDraw coordinates: rotate 180 degrees around OX
       //model.rotation.x = Math.PI;
@@ -212,12 +209,14 @@ function _loadFromServer(brickTemplate, scene) {
       brickTemplatesLoaded++;
     },
     null,
-    (error) => {console.log("Error downloading GLB file "+modelFileName+ ": "+error); errorsLoadingTemplates=true;});
+    (error) => {
+      console.log('Error downloading GLB file ' + modelFileName + ': ' + error);
+      errorsLoadingTemplates = true;
+    }
+  );
 }
 
-
-
-    /*materials[0] = new THREE.MeshStandardMaterial({
+/*materials[0] = new THREE.MeshStandardMaterial({
       color: 0x444444,
       metalness: 0.4,
       roughness: 0.5,
@@ -228,7 +227,7 @@ function _loadFromServer(brickTemplate, scene) {
       roughness: 0.5,
     });*/
 
-    /*const material = new THREE.MeshStandardMaterial({
+/*const material = new THREE.MeshStandardMaterial({
       color: 0xff4444,
       metalness: 0.4,
       roughness: 0.5,

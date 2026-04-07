@@ -1,6 +1,6 @@
 export const ADD_BRICK = 'ADD_BRICK';
 export function addBrick(brickID) {
-   console.log("Scene > addBrick "+brickID);
+  console.log('Scene > addBrick ' + brickID);
   return {
     type: ADD_BRICK,
     payload: {
@@ -8,7 +8,6 @@ export function addBrick(brickID) {
     },
   };
 }
-
 
 export const REMOVE_BRICK = 'REMOVE_BRICK';
 export function removeBrick(id) {
@@ -20,7 +19,6 @@ export function removeBrick(id) {
   };
 }
 
-
 export const UPDATE_BRICK = 'UPDATE_BRICK';
 export function updateBrick(brick) {
   return {
@@ -31,14 +29,12 @@ export function updateBrick(brick) {
   };
 }
 
-
 export const RESET_SCENE = 'RESET_SCENE';
 export function resetScene() {
   return {
     type: RESET_SCENE,
   };
 }
-
 
 export const SET_SCENE = 'SET_SCENE';
 export function setScene(bricks) {

@@ -31,7 +31,7 @@ export class Brick {
       color: this.color,
       colorType: this.colorType,
       brickID: this._brickID,
-      angle: this._angle
+      angle: this._angle,
     };
     return state;
   }
@@ -50,9 +50,9 @@ export class Brick {
       let width = boundingBox.max.x - boundingBox.min.x;
       let height = boundingBox.max.y - boundingBox.min.y;
       let depth = boundingBox.max.z - boundingBox.min.z;
-      position.x = Math.round(position.x/multX) * multX;
-      position.y = Math.round(position.y/multY) * multY;
-      position.z = Math.round(position.z/multZ) * multZ;
+      position.x = Math.round(position.x / multX) * multX;
+      position.y = Math.round(position.y / multY) * multY;
+      position.z = Math.round(position.z / multZ) * multZ;
       //position.x += width / 2; // because position in three.js is wrt the center of the object
       //position.y += height / 2;
       //position.z += depth / 2;
@@ -70,9 +70,9 @@ export class Brick {
 
     if (!assumeCorrectAlignment) {
       // now align with grid again
-      const offsetX = bb2.min.x - Math.round(bb2.min.x/multX) * multX;
-      const offsetY = bb2.min.y - Math.round(bb2.min.y/multY) * multY;
-      const offsetZ = bb2.min.z - Math.round(bb2.min.z/multZ) * multZ;
+      const offsetX = bb2.min.x - Math.round(bb2.min.x / multX) * multX;
+      const offsetY = bb2.min.y - Math.round(bb2.min.y / multY) * multY;
+      const offsetZ = bb2.min.z - Math.round(bb2.min.z / multZ) * multZ;
       //console.log(`Offsets: ${offsetX} ${offsetY} ${offsetZ}`)
       this.model.position.x += offsetX;
       this.model.position.y += offsetY;
@@ -87,52 +87,51 @@ export class Brick {
     //console.log(`Final BB = ${_toStringBox3(bb4)}`);
   }
 
-
   static getMaterial(color, colorType) {
-   // Default to white if color is undefined
-   const safeColor = color || '#FFFFFF';
-   switch (colorType) {
-     case ColorCollections.colorTypes.Solid:
-       return new THREE.MeshPhongMaterial( {
-         color: safeColor,
-         polygonOffset: true,
-         polygonOffsetFactor: 1, // positive value pushes polygon further away
-         polygonOffsetUnits: 1
-       } );
-       break;
-     case ColorCollections.colorTypes.Transparent:
-      return new THREE.MeshPhongMaterial( {
-        color: color,
-        opacity: 0.6,
-        transparent: true,
-        side: THREE.DoubleSide,
-        polygonOffset: true,
-        polygonOffsetFactor: 1, // positive value pushes polygon further away
-        polygonOffsetUnits: 1
-      } );
-       break;
-    case ColorCollections.colorTypes.Metallic:
-      return new THREE.MeshStandardMaterial( {
-        color: color,
-        roughness: 0.2,
-        metalness: 0.85,
-        polygonOffset: true,
-        polygonOffsetFactor: 1, // positive value pushes polygon further away
-        polygonOffsetUnits: 1
-      } );
-      break;
+    // Default to white if color is undefined
+    const safeColor = color || '#FFFFFF';
+    switch (colorType) {
+      case ColorCollections.colorTypes.Solid:
+        return new THREE.MeshPhongMaterial({
+          color: safeColor,
+          polygonOffset: true,
+          polygonOffsetFactor: 1, // positive value pushes polygon further away
+          polygonOffsetUnits: 1,
+        });
+        break;
+      case ColorCollections.colorTypes.Transparent:
+        return new THREE.MeshPhongMaterial({
+          color: color,
+          opacity: 0.6,
+          transparent: true,
+          side: THREE.DoubleSide,
+          polygonOffset: true,
+          polygonOffsetFactor: 1, // positive value pushes polygon further away
+          polygonOffsetUnits: 1,
+        });
+        break;
+      case ColorCollections.colorTypes.Metallic:
+        return new THREE.MeshStandardMaterial({
+          color: color,
+          roughness: 0.2,
+          metalness: 0.85,
+          polygonOffset: true,
+          polygonOffsetFactor: 1, // positive value pushes polygon further away
+          polygonOffsetUnits: 1,
+        });
+        break;
 
-    default:
-      console.log("Unknown color type: "+colorType);
-      return new THREE.MeshPhongMaterial( {
-        color: color,
-        roughness: 0.3,
-        polygonOffset: true,
-        polygonOffsetFactor: 1, // positive value pushes polygon further away
-        polygonOffsetUnits: 1
-      } );
-      break;
-   };
+      default:
+        console.log('Unknown color type: ' + colorType);
+        return new THREE.MeshPhongMaterial({
+          color: color,
+          roughness: 0.3,
+          polygonOffset: true,
+          polygonOffsetFactor: 1, // positive value pushes polygon further away
+          polygonOffsetUnits: 1,
+        });
+        break;
+    }
 
     /*var code = null;
     // Triangle and line colours
@@ -207,6 +206,4 @@ export class Brick {
     this.model.rotateY(angle);
     this.ghostBlock.rotateY(angle);
   }
-
-
 }

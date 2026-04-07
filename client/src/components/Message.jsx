@@ -13,19 +13,13 @@ styles.message = {
   background: 'rgba(0, 0, 0, 0.4)',
   borderRadius: '15px',
   fontSize: '0.9em',
-}
+};
 styles.message.i = {
   marginRight: '7.5px',
-}
-
+};
 
 const Message = ({ text, children }) => {
-  return (
-    <div style={styles.message}>
-      {children}
-    </div>
-  );
-}
-
+  return <div style={styles.message}>{children}</div>;
+};
 
 export default Message;

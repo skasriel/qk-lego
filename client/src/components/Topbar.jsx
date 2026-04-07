@@ -1,7 +1,7 @@
 import React from 'react';
 
 import Button from './Button';
-import {Modes} from '../util';
+import { Modes } from '../util';
 
 //import styles from '../styles/topbar.css';
 
@@ -30,11 +30,11 @@ styles.section = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-start',
-}
+};
 
 styles.section.firstChild = {
-  marginLeft: 0
-}
+  marginLeft: 0,
+};
 
 styles.rightSection = {
   composes: 'section',
@@ -43,7 +43,7 @@ styles.rightSection = {
   alignItems: 'center',
   justifyContent: 'flex-start',
   marginLeft: 'auto',
-}
+};
 styles.title = {
   color: 'rgba(255, 255, 255, 0.9)',
   padding: '0 20px',
@@ -51,59 +51,54 @@ styles.title = {
   fontSize: '0.9em',
   fontWeight: '600',
   letterSpacing: '0.02em',
-}
+};
 
-
-const Topbar = ({
-  mode,
-  onClickSetMode,
-  color,
-  onClickSetColor,
-  children
-}) => {
+const Topbar = ({ mode, onClickSetMode, color, onClickSetColor, children }) => {
   return (
     <div style={styles.topbar}>
       <div style={styles.section}>
-        <div style={styles.title}>
-          Mode
-        </div>
+        <div style={styles.title}>Mode</div>
         <Button
           active={mode === Modes.Build}
           onClick={() => onClickSetMode(Modes.Build)}
           icon="hammer"
-          text="Build (b)" />
+          text="Build (b)"
+        />
         <Button
           active={mode === Modes.Paint}
           onClick={() => onClickSetMode(Modes.Paint)}
           icon="paintbrush"
-          text="Paint (p)" />
+          text="Paint (p)"
+        />
         <Button
           active={mode === Modes.Delete}
           onClick={() => onClickSetMode(Modes.Delete)}
           icon="close-circle-outline"
-          text="Delete (d)" />
+          text="Delete (d)"
+        />
         <Button
           active={mode === Modes.Move}
           onClick={() => onClickSetMode(Modes.Move)}
           icon="copy-outline"
-          text="Move (m)" />
+          text="Move (m)"
+        />
         <Button
           active={mode === Modes.Clone}
           onClick={() => onClickSetMode(Modes.Clone)}
           icon="color-wand-outline"
-          text="Clone (c)" />
+          text="Clone (c)"
+        />
         <Button
           active={mode === Modes.Explore}
           onClick={() => onClickSetMode(Modes.Explore)}
           icon="color-wand-outline"
-          text="Explore (x)" />
-
+          text="Explore (x)"
+        />
       </div>
       {children}
     </div>
   );
-}
-
+};
 
 export default Topbar;
 

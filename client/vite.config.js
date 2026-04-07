@@ -26,6 +26,10 @@ export default defineConfig({
       '/ws': {
         target: 'ws://localhost:5001',
         ws: true,
+      },
+      '/ldraw': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
       }
     }
   },

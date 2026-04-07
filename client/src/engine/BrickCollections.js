@@ -1,4 +1,4 @@
-import {RebrickablePartsFlat} from './RebrickableData';
+import { RebrickablePartsFlat } from './RebrickableData';
 
 // see https://www.bricklink.com/catalogList.asp?catType=P&catString=130
 export class BrickCollections {
@@ -7,42 +7,42 @@ export class BrickCollections {
   static glbBrick = 'glb';
   static objBrick = 'obj';
   static collections = {
-    "Bricks": [
-      {type: BrickCollections.basicBrick, id: 3005, width: 1, height: 3, depth: 1},
-      {type: BrickCollections.basicBrick, id: 3004, width: 2, height: 3, depth: 1},
-      {type: BrickCollections.basicBrick, id: 3622, width: 3, height: 3, depth: 1},
-      {type: BrickCollections.basicBrick, id: 3010, width: 4, height: 3, depth: 1},
-      {type: BrickCollections.basicBrick, id: 3009, width: 6, height: 3, depth: 1},
-      {type: BrickCollections.basicBrick, id: 3008, width: 8, height: 3, depth: 1},
-      {type: BrickCollections.basicBrick, id: 6111, width: 10, height: 3, depth: 1},
-      {type: BrickCollections.basicBrick, id: 6112, width: 12, height: 3, depth: 1},
-      {type: BrickCollections.basicBrick, id: 3003, width: 2, height: 3, depth: 2},
-      {type: BrickCollections.basicBrick, id: 3002, width: 3, height: 3, depth: 2},
-      {type: BrickCollections.basicBrick, id: 3001, width: 4, height: 3, depth: 2},
-      {type: BrickCollections.basicBrick, id: 44237, width: 6, height: 3, depth: 2},
-      {type: BrickCollections.basicBrick, id: 3006, width: 10, height: 3, depth: 2},
-      {type: BrickCollections.basicBrick, id: 14716, width: 1, height: 8, depth: 1},
-      {type: BrickCollections.basicBrick, id: 22886, width: 2, height: 8, depth: 1},
-      {type: BrickCollections.basicBrick, id: 49311, width: 4, height: 8, depth: 1},
-      {type: BrickCollections.basicBrick, id: 30144, width: 4, height: 8, depth: 2},
-      {type: BrickCollections.basicBrick, id: 6213, width: 6, height: 8, depth: 2},
-      {type: BrickCollections.basicBrick, id: 2453, width: 1, height: 9, depth: 2},
-      {type: BrickCollections.basicBrick, id: 2454, width: 2, height: 9, depth: 2},
-      {type: BrickCollections.basicBrick, id: 3755, width: 3, height: 9, depth: 2},
-      {type: BrickCollections.basicBrick, id: 3754, width: 6, height: 9, depth: 2},
-      {type: BrickCollections.basicBrick, id: 4201, width: 8, height: 3, depth: 8},
-      {type: BrickCollections.basicBrick, id: 30072, width: 12, height: 3, depth: 24}
-        /*2465,*/ /*2357*/,
+    Bricks: [
+      { type: BrickCollections.basicBrick, id: 3005, width: 1, height: 3, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 3004, width: 2, height: 3, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 3622, width: 3, height: 3, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 3010, width: 4, height: 3, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 3009, width: 6, height: 3, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 3008, width: 8, height: 3, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 6111, width: 10, height: 3, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 6112, width: 12, height: 3, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 3003, width: 2, height: 3, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 3002, width: 3, height: 3, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 3001, width: 4, height: 3, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 44237, width: 6, height: 3, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 3006, width: 10, height: 3, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 14716, width: 1, height: 8, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 22886, width: 2, height: 8, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 49311, width: 4, height: 8, depth: 1 },
+      { type: BrickCollections.basicBrick, id: 30144, width: 4, height: 8, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 6213, width: 6, height: 8, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 2453, width: 1, height: 9, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 2454, width: 2, height: 9, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 3755, width: 3, height: 9, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 3754, width: 6, height: 9, depth: 2 },
+      { type: BrickCollections.basicBrick, id: 4201, width: 8, height: 3, depth: 8 },
+      { type: BrickCollections.basicBrick, id: 30072, width: 12, height: 3, depth: 24 },
+      /*2465,*/ /*2357*/
       /*3007,*/ /*44042*, 6212, 30400, 43802, 4204, */
     ],
-    "Baseplates": [
-      {type: BrickCollections.basicBrick, id: 3497, width: 8, height: 1, depth: 24},
-      {type: BrickCollections.basicBrick, id: 3867, width: 16, height: 1, depth: 16},
-      {type: BrickCollections.basicBrick, id: 3857, width: 16, height: 1, depth: 32},
-      {type: BrickCollections.basicBrick, id: 3811, width: 32, height: 1, depth: 32}
+    Baseplates: [
+      { type: BrickCollections.basicBrick, id: 3497, width: 8, height: 1, depth: 24 },
+      { type: BrickCollections.basicBrick, id: 3867, width: 16, height: 1, depth: 16 },
+      { type: BrickCollections.basicBrick, id: 3857, width: 16, height: 1, depth: 32 },
+      { type: BrickCollections.basicBrick, id: 3811, width: 32, height: 1, depth: 32 },
     ],
-    "Animals": [],
-    "Characters": []
+    Animals: [],
+    Characters: [],
     /*
     "Doors & Windows" : [
       '60592', '86209', '4035', '60594', 6154, 4131
@@ -52,7 +52,7 @@ export class BrickCollections {
     ],*/
   };
 
-  static defaultBrick = BrickCollections.collections["Bricks"][0];
+  static defaultBrick = BrickCollections.collections['Bricks'][0];
   static getAllBricks() {
     let bricks = [];
     for (let i in BrickCollections.collections) {
@@ -62,14 +62,18 @@ export class BrickCollections {
   }
 
   static getBrickFromID(id) {
-    let brickTemplate = BrickCollections.getAllBricks().find(template => {return template.id == id});
+    let brickTemplate = BrickCollections.getAllBricks().find((template) => {
+      return template.id == id;
+    });
     if (brickTemplate) return brickTemplate;
-    
+
     // Try Rebrickable data
-    const rebrickablePart = RebrickablePartsFlat.find(p => p.id == id);
+    const rebrickablePart = RebrickablePartsFlat.find((p) => p.id == id);
     if (rebrickablePart) {
       // Parse dimensions from name
-      let width = 2, height = 3, depth = 2;
+      let width = 2,
+        height = 3,
+        depth = 2;
       const match = rebrickablePart.name.match(/(\d+)\s*x\s*(\d+)(?:\s*x\s*(\d+))?/);
       if (match) {
         width = parseInt(match[1]);
@@ -84,7 +88,7 @@ export class BrickCollections {
         depth: depth,
       };
     }
-    
+
     return null;
   }
 
@@ -92,4 +96,4 @@ export class BrickCollections {
     let bricks = BrickCollections.getAllBricks();
     return bricks.length;
   }
-};
+}

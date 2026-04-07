@@ -27,25 +27,20 @@ styles.section = {
   //display: 'flex',
   alignItems: 'center',
   //justifyContent: 'flex-start',
-}
+};
 
 styles.section.firstChild = {
-  marginLeft: 0
-}
+  marginLeft: 0,
+};
 
 styles.title = {
   color: '#FFFFFF',
   padding: '15px',
   textTransform: 'uppercase',
   fontSize: '1em',
-}
+};
 
-
-const Bottombar = ({
-  brickID,
-  onClickSetBrick,
-  children
-}) => {
+const Bottombar = ({ brickID, onClickSetBrick, children }) => {
   return (
     <div style={styles.bottombar}>
       <div style={styles.section}>
@@ -54,7 +49,6 @@ const Bottombar = ({
       {children}
     </div>
   );
-}
-
+};
 
 export default Bottombar;

@@ -10,8 +10,7 @@ const initialState = {
   brickID: BrickCollections.defaultBrick, //BrickCollections.collections['Bricks'][0],
 };
 
-
-export default function builder(state=initialState, action) {
+export default function builder(state = initialState, action) {
   switch (action.type) {
     case BuilderActions.SET_MODE: {
       const { mode } = action.payload;
@@ -24,7 +23,8 @@ export default function builder(state=initialState, action) {
       const { color, colorType } = action.payload;
       return {
         ...state,
-        color, colorType,
+        color,
+        colorType,
       };
     }
     case BuilderActions.SET_BRICK: {

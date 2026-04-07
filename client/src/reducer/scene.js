@@ -1,18 +1,16 @@
 import * as SceneActions from '../actions/scene';
 
-
 const initialState = {
   bricks: [],
 };
 
-
-export default function scene(state=initialState, action) {
+export default function scene(state = initialState, action) {
   switch (action.type) {
     case SceneActions.ADD_BRICK: {
       const { brick } = action.payload;
       return {
         ...state,
-        bricks: [ ...state.bricks, brick ],
+        bricks: [...state.bricks, brick],
       };
     }
     case SceneActions.REMOVE_BRICK: {
@@ -27,7 +25,7 @@ export default function scene(state=initialState, action) {
       const filteredBricks = state.bricks.filter((b) => b.customId !== brick.customId);
       return {
         ...state,
-        bricks: [ ...filteredBricks, brick ],
+        bricks: [...filteredBricks, brick],
       };
     }
     case SceneActions.RESET_SCENE: {

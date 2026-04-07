@@ -1,6 +1,6 @@
 import React from 'react';
 import { CompactPicker } from 'react-color';
-import { ColorCollections} from '../util';
+import { ColorCollections } from '../util';
 
 //import styles from '../styles/color-picker.css';
 
@@ -12,20 +12,17 @@ styles.colorPicker = {
   display: 'flex',
   justifyContent: 'flex-start',
   paddingLeft: '10px',
-}
+};
 styles.brick = {
   width: '35px',
-}
+};
 styles.picker = {
   position: 'absolute',
   top: 'calc(100% + 35px)',
   left: 'calc(50% - 15px)',
   display: 'none',
-}
-styles.visible = {
-}
-
-
+};
+styles.visible = {};
 
 class ColorPicker extends React.Component {
   constructor(props) {
@@ -42,8 +39,7 @@ class ColorPicker extends React.Component {
     });
   }
 
-  componentWillUnmount() {
-  }
+  componentWillUnmount() {}
 
   _handleSetSolidColor(color) {
     const { handleSetColor } = this.props;
@@ -62,8 +58,17 @@ class ColorPicker extends React.Component {
     let color = this.props.color;
     return (
       <div style={styles.colorPicker}>
-        <div style={styles.visible} ref={(picker) => this.picker = picker}>
-          <div style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8em', fontWeight: '500', marginBottom: '6px' }}>Solid Colors</div>
+        <div style={styles.visible} ref={(picker) => (this.picker = picker)}>
+          <div
+            style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '0.8em',
+              fontWeight: '500',
+              marginBottom: '6px',
+            }}
+          >
+            Solid Colors
+          </div>
           <CompactPicker
             color={color}
             colors={ColorCollections.SolidColors}
@@ -71,7 +76,17 @@ class ColorPicker extends React.Component {
             onSwatchHover={(color) => this.setState({ background: color.hex })}
           />
 
-          <div style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8em', fontWeight: '500', marginTop: '12px', marginBottom: '6px' }}>Transparent Colors</div>
+          <div
+            style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '0.8em',
+              fontWeight: '500',
+              marginTop: '12px',
+              marginBottom: '6px',
+            }}
+          >
+            Transparent Colors
+          </div>
           <CompactPicker
             color={color}
             colors={ColorCollections.TransparentColors}
@@ -79,19 +94,27 @@ class ColorPicker extends React.Component {
             onSwatchHover={(color) => this.setState({ background: color.hex })}
           />
 
-          <div style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8em', fontWeight: '500', marginTop: '12px', marginBottom: '6px' }}>Metallic Colors</div>
+          <div
+            style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '0.8em',
+              fontWeight: '500',
+              marginTop: '12px',
+              marginBottom: '6px',
+            }}
+          >
+            Metallic Colors
+          </div>
           <CompactPicker
             color={color}
             colors={ColorCollections.MetallicColors}
             onChangeComplete={this._handleSetMetallicColor}
             onSwatchHover={(color) => this.setState({ background: color.hex })}
           />
-
         </div>
       </div>
     );
   }
 }
-
 
 export default ColorPicker;

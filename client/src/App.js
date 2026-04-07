@@ -12,8 +12,9 @@ function setupStore(initialState) {
   return createStore(
     reducer,
     initialState,
-    (window.__REDUX_DEVTOOLS_EXTENSION__ && import.meta.env.DEV) ?
-      window.__REDUX_DEVTOOLS_EXTENSION__() : f => f
+    window.__REDUX_DEVTOOLS_EXTENSION__ && import.meta.env.DEV
+      ? window.__REDUX_DEVTOOLS_EXTENSION__()
+      : (f) => f
   );
 }
 
@@ -25,10 +26,13 @@ function App() {
       <Builder />
       <div id="blocker">
         <div id="instructions">
-          <span style={{fontSize:'36px'}}>Click to play</span>
-          <br /><br />
-          Move: WASD<br/>
-          Jump: SPACE<br/>
+          <span style={{ fontSize: '36px' }}>Click to play</span>
+          <br />
+          <br />
+          Move: WASD
+          <br />
+          Jump: SPACE
+          <br />
           Look: MOUSE
         </div>
       </div>

@@ -6,6 +6,19 @@ const http = require('http');
 // Enable JSON parsing for POST requests
 app.use(express.json());
 
+// Serve LDraw library files - with path normalization
+app.use('/ldraw', (req, res, next) => {
+  // Convert backslashes to forward slashes in URL
+  req.url = req.url.replace(/\\/g, '/');
+  // Fix double 'parts/parts/' path issue from LDrawLoader
+  req.url = req.url.replace(/\/parts\/parts\//g, '/parts/');
+  // Fix 'p/parts/' path issue from LDrawLoader
+  req.url = req.url.replace(/\/p\/parts\//g, '/parts/');
+  // Fix 'models/parts/' path issue from LDrawLoader  
+  req.url = req.url.replace(/\/models\/parts\//g, '/parts/');
+  next();
+}, express.static(path.join(__dirname, 'ldraw')));
+
 // Serve the React client build
 app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
 

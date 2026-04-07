@@ -1,8 +1,8 @@
 import React from 'react';
 import isEqual from 'lodash/isEqual';
 
-import {BrickCollections} from '../engine/BrickCollections';
-import {RebrickableParts, RebrickableCategories} from '../engine/RebrickableData';
+import { BrickCollections } from '../engine/BrickCollections';
+import { RebrickableParts, RebrickableCategories } from '../engine/RebrickableData';
 
 let styles = {};
 
@@ -13,14 +13,14 @@ styles.picker = {
   background: 'rgba(15, 23, 42, 0.95)',
   backdropFilter: 'blur(12px)',
   borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-}
+};
 styles.categoryList = {
   width: '180px',
   overflowY: 'auto',
   overflowX: 'hidden',
   borderRight: '1px solid rgba(255, 255, 255, 0.1)',
   backgroundColor: 'rgba(0, 0, 0, 0.2)',
-}
+};
 styles.categoryItem = {
   padding: '10px 15px',
   cursor: 'pointer',
@@ -28,7 +28,7 @@ styles.categoryItem = {
   fontSize: '0.85em',
   borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
   transition: 'all 0.2s',
-}
+};
 styles.categoryItemActive = {
   padding: '10px 15px',
   cursor: 'pointer',
@@ -37,7 +37,7 @@ styles.categoryItemActive = {
   backgroundColor: 'rgba(96, 165, 250, 0.2)',
   borderLeft: '3px solid #60a5fa',
   borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-}
+};
 styles.partsGrid = {
   flex: 1,
   overflowY: 'auto',
@@ -47,7 +47,7 @@ styles.partsGrid = {
   gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
   gap: '8px',
   alignContent: 'start',
-}
+};
 styles.brickThumb = {
   height: '50px',
   marginBottom: '7.5px',
@@ -59,24 +59,24 @@ styles.brickThumb = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-}
+};
 styles.label = {
   color: '#FFFFFF',
-}
+};
 
 function displayNameFromID(brickID) {
   for (const category of Object.values(RebrickableParts)) {
-    const found = category.find(p => p.id === String(brickID));
+    const found = category.find((p) => p.id === String(brickID));
     if (found) return found.name;
   }
-  return "Brick #"+brickID;
+  return 'Brick #' + brickID;
 }
 
 class BrickPicker extends React.Component {
   state = {
     open: true,
     selectedCategory: 'Bricks',
-  }
+  };
 
   constructor(props) {
     super(props);
@@ -98,11 +98,11 @@ class BrickPicker extends React.Component {
     const { selectedCategory } = this.state;
     const categories = RebrickableCategories;
     const currentParts = RebrickableParts[selectedCategory] || [];
-    
+
     return (
-      <div style={styles.picker} ref={(picker) => this.picker = picker}>
+      <div style={styles.picker} ref={(picker) => (this.picker = picker)}>
         <div style={styles.categoryList}>
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <div
               key={cat}
               onClick={() => this.setState({ selectedCategory: cat })}
@@ -125,15 +125,30 @@ class BrickPicker extends React.Component {
 
         <div style={styles.partsGrid}>
           {currentParts.map((b, i) => (
-            <div key={i} style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => this._handleChangeBrick(b)}>
-              <div style={{
-                ...styles.brickThumb,
-                backgroundColor: selectedID.id == b.id ? '#60a5fa' : '#FFFFFF',
-                border: selectedID.id == b.id ? '2px solid #3b82f6' : '1px solid rgba(0,0,0,0.2)',
-              }}>
+            <div
+              key={i}
+              style={{ textAlign: 'center', cursor: 'pointer' }}
+              onClick={() => this._handleChangeBrick(b)}
+            >
+              <div
+                style={{
+                  ...styles.brickThumb,
+                  backgroundColor: selectedID.id == b.id ? '#60a5fa' : '#FFFFFF',
+                  border: selectedID.id == b.id ? '2px solid #3b82f6' : '1px solid rgba(0,0,0,0.2)',
+                }}
+              >
                 <div style={{ fontSize: '0.7em', fontWeight: 'bold', color: '#333' }}>{b.id}</div>
               </div>
-              <div style={{ ...styles.label, fontSize: '0.7em', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div
+                style={{
+                  ...styles.label,
+                  fontSize: '0.7em',
+                  marginTop: '4px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {b.name}
               </div>
             </div>
@@ -144,10 +159,12 @@ class BrickPicker extends React.Component {
   }
 
   _handleChangeBrick(brickData) {
-    console.log("_handle ", brickData);
+    console.log('_handle ', brickData);
     const { handleSetBrick } = this.props;
-    
-    let width = 2, height = 3, depth = 4;
+
+    let width = 2,
+      height = 3,
+      depth = 4;
     const name = brickData.name || '';
     const match = name.match(/(\d+)\s*x\s*(\d+)(?:\s*x\s*(\d+))?/);
     if (match) {
@@ -155,7 +172,7 @@ class BrickPicker extends React.Component {
       depth = parseInt(match[2]);
       height = match[3] ? parseInt(match[3]) * 3 : 3;
     }
-    
+
     const brick = {
       id: brickData.id,
       type: 'basic',
@@ -163,7 +180,7 @@ class BrickPicker extends React.Component {
       height: height,
       depth: depth,
     };
-    
+
     handleSetBrick(brick);
   }
 
