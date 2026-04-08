@@ -44,47 +44,17 @@ export class Brick {
   }
 
   setPosition(position, assumeCorrectAlignment) {
-    //console.log(`Brick.setPosition with ${_toStringVector3D(position)}`);
     if (!assumeCorrectAlignment) {
-      let boundingBox = new THREE.Box3().setFromObject(this.model);
-      let width = boundingBox.max.x - boundingBox.min.x;
-      let height = boundingBox.max.y - boundingBox.min.y;
-      let depth = boundingBox.max.z - boundingBox.min.z;
       position.x = Math.round(position.x / multX) * multX;
       position.y = Math.round(position.y / multY) * multY;
       position.z = Math.round(position.z / multZ) * multZ;
-      //position.x += width / 2; // because position in three.js is wrt the center of the object
-      //position.y += height / 2;
-      //position.z += depth / 2;
       position.y += BOUNDINGBOX_OFFSET;
     }
-    this.model.position.copy(position);
+
+    // Both model and ghost block get the same position
+    // The ghost block (simple box) is the authoritative reference
     this.ghostBlock.position.copy(position);
-
-    // HACK force alignment on the Y coordinates between ghost and real...
-    let bb1 = new THREE.Box3().setFromObject(this.model);
-    let bb2 = new THREE.Box3().setFromObject(this.ghostBlock);
-    let deltaY = bb1.min.y - bb2.min.y;
-    //console.log(`Forcing ghost Y alignment by ${deltaY}`);
-    this.model.position.y -= deltaY;
-
-    if (!assumeCorrectAlignment) {
-      // now align with grid again
-      const offsetX = bb2.min.x - Math.round(bb2.min.x / multX) * multX;
-      const offsetY = bb2.min.y - Math.round(bb2.min.y / multY) * multY;
-      const offsetZ = bb2.min.z - Math.round(bb2.min.z / multZ) * multZ;
-      //console.log(`Offsets: ${offsetX} ${offsetY} ${offsetZ}`)
-      this.model.position.x += offsetX;
-      this.model.position.y += offsetY;
-      this.model.position.z += offsetZ;
-      this.ghostBlock.position.x += offsetX;
-      this.ghostBlock.position.y += offsetY;
-      this.ghostBlock.position.z += offsetZ;
-    }
-
-    let bb4 = new THREE.Box3().setFromObject(this.ghostBlock);
-    //console.log(`Brick Position now ${_toStringVector3D(this.model.position)} ; ghostPosition ${_toStringVector3D(this.ghostBlock.position)}`);
-    //console.log(`Final BB = ${_toStringBox3(bb4)}`);
+    this.model.position.copy(position);
   }
 
   static getMaterial(color, colorType) {

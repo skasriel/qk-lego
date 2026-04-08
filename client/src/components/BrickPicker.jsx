@@ -3,6 +3,7 @@ import isEqual from 'lodash/isEqual';
 
 import { BrickCollections } from '../engine/BrickCollections';
 import { RebrickableParts, RebrickableCategories } from '../engine/RebrickableData';
+import { BrickThumbnail } from './BrickThumbnail';
 
 let styles = {};
 
@@ -130,15 +131,7 @@ class BrickPicker extends React.Component {
               style={{ textAlign: 'center', cursor: 'pointer' }}
               onClick={() => this._handleChangeBrick(b)}
             >
-              <div
-                style={{
-                  ...styles.brickThumb,
-                  backgroundColor: selectedID.id == b.id ? '#60a5fa' : '#FFFFFF',
-                  border: selectedID.id == b.id ? '2px solid #3b82f6' : '1px solid rgba(0,0,0,0.2)',
-                }}
-              >
-                <div style={{ fontSize: '0.7em', fontWeight: 'bold', color: '#333' }}>{b.id}</div>
-              </div>
+              <BrickThumbnail brickId={b.id} selected={selectedID.id == b.id} />
               <div
                 style={{
                   ...styles.label,

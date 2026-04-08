@@ -25,7 +25,7 @@ const worldSize = 100000;
 
 const FILE_VERSION_CURRENT = 1.4;
 
-const PLANE_OFFSET = 50;
+const PLANE_OFFSET = 0;
 
 const USE_SHADOWS = false;
 
@@ -51,7 +51,7 @@ styles.shifted = {
   width: '100%',
   pointerEvents: 'none',
   transition: 'transform 0.15s ease-in-out',
-  transform: 'translate3d(-100px, 0, 0)',
+  transform: 'translate3d(0, 0, 0)',
 };
 
 // TODO: test this for speed: 				geometry = new THREE.BufferGeometry().fromGeometry( geometry );
@@ -477,7 +477,6 @@ class Scene extends React.Component {
       }
     }
     let position = rollOverGhostBlock.position.clone();
-    //console.log(`Rollover brick supposedly is at ${_toStringVector3D(position)}`);
     position.y += BOUNDINGBOX_OFFSET;
 
     let brick = BasicBrick.createBrick(
@@ -551,26 +550,31 @@ class Scene extends React.Component {
 
     const rollOverBrickMesh = rollOverBrick.getModel();
 
-    const rollOverBoundingBox = new THREE.Box3().setFromObject(rollOverGhostBlock);
-    const height = rollOverBoundingBox.max.y - rollOverBoundingBox.min.y;
+    // Use the actual model to compute where its bottom is relative to its position
+    const modelBB = new THREE.Box3().setFromObject(rollOverBrickMesh);
+    const modelHeight = modelBB.max.y - modelBB.min.y;
+    // How far below the model's position.y is its bottom
+    const bottomOffset = rollOverBrickMesh.position.y - modelBB.min.y;
 
     let intersectObject = intersect.object;
     let position = new THREE.Vector3().copy(intersect.point).add(intersect.face.normal);
 
     if (intersectObject === this.plane || intersectObject === this.ghostPlane) {
-      position.y = height / 2 + PLANE_OFFSET;
-      //console.log(`Intersect with plane. Setting height to ${position.y} object height=${height}`);
+      // Place brick so its bottom sits on the floor (y=0)
+      position.y = bottomOffset;
     } else {
       let intersectBox = new THREE.Box3().setFromObject(intersectObject);
-      let intersectWidth = intersectBox.max.x - intersectBox.min.x;
-      let intersectHeight = intersectBox.max.y - intersectBox.min.y;
-      let intersectDepth = intersectBox.max.z - intersectBox.min.z;
-      position.y = intersectBox.max.y + height / 2 - 10; // - 25;// +  // intersectHeight;
-      //position.y -= 25; // Make the brick fit inside the one below.
-      //console.log("Intersect object "+object.name+" point is "+this._toStringVector3D(intersect.point));
-      //console.log("Bounding Box w="+intersectWidth+" h="+intersectHeight+" z="+intersectDepth);
+      // Place brick so its bottom sits on top of the intersected object
+      // Subtract knob nesting overlap so studs fit fully into holes
+      const knobNesting = 56;
+      position.y = intersectBox.max.y + bottomOffset - knobNesting;
     }
-    rollOverBrick.setPosition(position);
+
+    // Snap to grid cell centers (not intersections)
+    position.x = Math.round(position.x / multX) * multX + multX / 2;
+    position.z = Math.round(position.z / multZ) * multZ + multZ / 2;
+
+    rollOverBrick.setPosition(position, true);
 
     /*if (object == this.plane || object == this.ghostPlane) {
       const savedY = rollOverBrickMesh.position.y;
@@ -747,11 +751,6 @@ class Scene extends React.Component {
     } else {
       // Keyboard shortcuts for non-Explore modes
       switch (event.keyCode) {
-        case 16: // Shift
-          scene.setState({
-            isShiftDown: true,
-          });
-          break;
         case 66: // B
           this.props.setMode(Modes.Build);
           rollOverBrick.getModel().visible = true;
@@ -817,11 +816,6 @@ class Scene extends React.Component {
       }
     } else {
       switch (event.keyCode) {
-        case 16:
-          this.setState({
-            isShiftDown: false,
-          });
-          break;
         case 68: // D
           //if (mode === 'build')
           //  rollOverBrick.getModel().visible = true;
@@ -911,19 +905,13 @@ class Scene extends React.Component {
   }
 
   _renderScene() {
-    let first, second;
-    if (this.isShiftDown || (this.state && this.state.isShiftDown)) {
-      first = this.scene;
-      second = this.ghostScene;
-    } else {
-      first = this.ghostScene;
-      second = this.scene;
-    }
     if (this.controls.update) {
       this.controls.update(this.clock.getDelta());
     }
-    this.renderer.render(first, this.camera);
-    this.renderer.render(second, this.camera);
+    this.renderer.clear();
+    this.renderer.render(this.ghostScene, this.camera);
+    this.renderer.clearDepth();
+    this.renderer.render(this.scene, this.camera);
   }
 
   createAndAddBrickFromObject(state) {

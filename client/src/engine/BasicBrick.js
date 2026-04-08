@@ -156,10 +156,10 @@ export class BasicBrick extends Brick {
           ldrawModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
           ldrawModel.position.copy(position);
           ldrawModel.rotation.copy(rotation);
+          ldrawModel.rotation.x += Math.PI; // Flip upright (studs on top)
           ldrawModel.name = brick.model.name;
           parent.add(ldrawModel);
           brick.model = ldrawModel;
-          console.log(`Replaced box with LDraw model for ${brickID}`);
         }
       }
     });

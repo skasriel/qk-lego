@@ -1,68 +1,133 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# QK Lego Builder
 
-## Available Scripts
+A browser-based 3D LEGO builder powered by Three.js and React. Build virtual LEGO creations with accurate brick shapes from the official LDraw parts library.
 
-In the project directory, you can run:
+## Features
 
-### `yarn start`
+- **3D Building**: Place, move, rotate, clone, and delete LEGO bricks in a 3D scene
+- **Accurate Brick Shapes**: 300+ brick types rendered using the LDraw parts library with real 3D geometry (slopes, curves, cones, round bricks, etc.)
+- **3D Brick Previews**: Thumbnail previews of each brick rendered in real-time using Three.js
+- **Color Palette**: Solid, transparent, and metallic LEGO colors
+- **Save/Load Scenes**: Save your creations with custom names and load them later
+- **Multi-user Support**: Real-time collaboration via WebSocket - multiple users can build together
+- **Keyboard Shortcuts**: Quick mode switching (B=Build, P=Paint, D=Delete, M=Move, C=Clone, X=Explore)
+- **Modern UI**: Glassmorphism-styled interface with LeoCAD-inspired brick picker
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Tech Stack
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+- **Frontend**: React 18, Three.js, Redux, Vite
+- **Backend**: Node.js, Express, WebSocket
+- **3D Models**: LDraw parts library (23,000+ parts)
+- **Data**: Rebrickable LEGO database for part metadata
 
-### `yarn test`
+## Getting Started
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Prerequisites
 
-### `yarn build`
+- Node.js (v18+)
+- npm
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Setup
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/skasriel/qk-lego.git
+   cd qk-lego
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+2. **Install dependencies**
+   ```bash
+   cd client && npm install && cd ..
+   ```
 
-### `yarn eject`
+3. **Download the LDraw parts library**
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+   Download the complete LDraw library from [library.ldraw.org](https://library.ldraw.org/library/updates/complete.zip) and extract it to `server/ldraw/`:
+   ```bash
+   curl -L -o /tmp/ldraw.zip https://library.ldraw.org/library/updates/complete.zip
+   unzip /tmp/ldraw.zip -d server/
+   ```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+4. **Start the backend server**
+   ```bash
+   cd server && node server.js
+   ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+5. **Start the frontend dev server** (in a separate terminal)
+   ```bash
+   cd client && npm start
+   ```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+6. **Open** [http://localhost:3000](http://localhost:3000) in your browser
 
-## Learn More
+### Build for Production
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+cd client && npm run build
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+The built files will be in `client/build/`, served automatically by the Express server.
 
-### Code Splitting
+## Usage
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+### Modes
 
-### Analyzing the Bundle Size
+| Mode | Shortcut | Description |
+|------|----------|-------------|
+| Build | B | Place new bricks |
+| Paint | P | Change brick colors |
+| Delete | D | Remove bricks |
+| Move | M | Reposition bricks |
+| Clone | C | Duplicate bricks |
+| Explore | X | Orbit camera freely |
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+### Building
 
-### Making a Progressive Web App
+1. Select a brick type from the bottom panel (organized by category)
+2. Choose a color from the right sidebar
+3. Hover over the scene to preview placement
+4. Click to place the brick
+5. Use R to rotate before placing
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
+### Saving/Loading
 
-### Advanced Configuration
+- Click **Save Scene** in the right sidebar to save your creation
+- Click **Load Scene** to browse and load saved creations
+- Press ESC to close dialogs
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
+## Development
 
-### Deployment
+### Linting
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
+```bash
+cd client
+npm run lint        # Check for errors
+npm run lint:fix    # Auto-fix issues
+npm run format      # Format with Prettier
+```
 
-### `yarn build` fails to minify
+### Project Structure
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+```
+qk-lego/
+  client/               # React frontend
+    src/
+      components/       # UI components (Topbar, Sidebar, BrickPicker, etc.)
+      engine/           # Three.js scene, brick rendering, LDraw loader
+      actions/          # Redux actions
+      reducer/          # Redux reducers
+    vite.config.js      # Vite configuration with proxy settings
+  server/
+    server.js           # Express + WebSocket server
+    ldraw/              # LDraw parts library (not committed, see setup)
+```
+
+## Credits
+
+- [LDraw](https://www.ldraw.org/) - LEGO parts library
+- [Rebrickable](https://rebrickable.com/) - LEGO parts database
+- [Three.js](https://threejs.org/) - 3D rendering engine
+
+## License
+
+MIT
