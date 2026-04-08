@@ -430,12 +430,14 @@ class Scene extends React.Component {
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    var intersectArray = [...this.ghostBricks, this.ghostPlane];
+    // Use actual brick models for intersection, not ghost boxes
+    // This allows accurate clicking on L-shaped bricks, etc.
+    var intersectArray = [...this.bricks.map((b) => b.getModel()), this.ghostPlane];
     const { mode } = this.props;
     if (mode === Modes.Move && this.isBrickSelected) {
       // remove the brick we're moving from the raycaster
-      intersectArray = intersectArray.filter((ghost) => {
-        return ghost !== this.rollOverGhostBlock;
+      intersectArray = intersectArray.filter((model) => {
+        return model !== this.rollOverBrick.getModel();
       });
     }
     const intersects = this.raycaster.intersectObjects(intersectArray, true);
@@ -452,27 +454,59 @@ class Scene extends React.Component {
 
   _createBrick(intersect) {
     const { brick: rollOverBrick, block: rollOverGhostBlock } = this._getRollOverBrick();
-    const meshBoundingBox = new THREE.Box3().setFromObject(rollOverGhostBlock);
-    // first check that there is no collision with existing bricks
-    // this isn't totally correct - for some bricks the bounding boxes collide, but the bricks don't!!!
-    const fudge = 24; // give some space to avoid detecting as collisions adjacent blocks
-    meshBoundingBox.min.x += fudge;
-    meshBoundingBox.min.y += fudge;
-    meshBoundingBox.min.z += fudge;
-    meshBoundingBox.max.x -= fudge;
-    meshBoundingBox.max.y -= fudge;
-    meshBoundingBox.max.z -= fudge;
-    for (var i = 0; i < this.ghostBricks.length; i++) {
-      const brickBoundingBox = new THREE.Box3().setFromObject(this.ghostBricks[i]);
-      const collision = meshBoundingBox.intersectsBox(brickBoundingBox);
+
+    // For accurate collision detection with complex shapes (L-bricks, etc.),
+    // we need to check actual geometry intersection, not just bounding boxes.
+    // Use Three.js raycasting to check if the new brick's geometry intersects existing bricks.
+    const rollOverMesh = rollOverBrick.getModel();
+
+    for (var i = 0; i < this.bricks.length; i++) {
+      const existingBrick = this.bricks[i];
+      const existingMesh = existingBrick.getModel();
+
+      // Quick bounding box check first (for performance)
+      const newBox = new THREE.Box3().setFromObject(rollOverMesh);
+      const existingBox = new THREE.Box3().setFromObject(existingMesh);
+
+      if (!newBox.intersectsBox(existingBox)) {
+        continue; // No bounding box overlap, definitely no collision
+      }
+
+      // Bounding boxes overlap - do precise mesh intersection test
+      // Check if any vertices of the new brick are inside the existing brick
+      const newGeometry = rollOverMesh.geometry;
+      const existingGeometry = existingMesh.geometry;
+
+      if (!newGeometry || !existingGeometry) continue;
+
+      // Get world matrices
+      const newMatrix = rollOverMesh.matrixWorld;
+      const existingMatrixInverse = new THREE.Matrix4().copy(existingMesh.matrixWorld).invert();
+
+      // Check a sample of vertices from the new brick
+      const posAttr = newGeometry.attributes.position;
+      if (!posAttr) continue;
+
+      let collision = false;
+      const sampleStep = Math.max(1, Math.floor(posAttr.count / 20)); // Sample ~20 vertices for performance
+
+      for (let v = 0; v < posAttr.count; v += sampleStep) {
+        const vertex = new THREE.Vector3().fromBufferAttribute(posAttr, v);
+        vertex.applyMatrix4(newMatrix); // Transform to world space
+        vertex.applyMatrix4(existingMatrixInverse); // Transform to existing brick's local space
+
+        // Check if this vertex is inside the existing brick's bounding box
+        if (existingGeometry.boundingBox === null) {
+          existingGeometry.computeBoundingBox();
+        }
+        if (existingGeometry.boundingBox.containsPoint(vertex)) {
+          collision = true;
+          break;
+        }
+      }
+
       if (collision) {
-        console.log('Not creating object: collision!!!' + this.ghostBricks[i].name);
-        console.log(
-          'Not creating object due to collision!!!' +
-            _toStringBox3(meshBoundingBox) +
-            ' vs ' +
-            _toStringBox3(brickBoundingBox)
-        );
+        console.log('Not creating object: collision with ' + existingBrick.getModel().name);
         return;
       }
     }
@@ -570,9 +604,29 @@ class Scene extends React.Component {
       position.y = intersectBox.max.y + bottomOffset - knobNesting;
     }
 
-    // Snap to grid cell centers (not intersections)
-    position.x = Math.round(position.x / multX) * multX + multX / 2;
-    position.z = Math.round(position.z / multZ) * multZ + multZ / 2;
+    // Snap to grid - align brick edges to grid lines
+    // Use actual model bounding box for dimensions (stud counts may not match LDraw orientation)
+    const modelBox = new THREE.Box3().setFromObject(rollOverBrick.getModel());
+    const modelWidth = modelBox.max.x - modelBox.min.x;
+    const modelDepth = modelBox.max.z - modelBox.min.z;
+    // Round dimensions to nearest grid unit to avoid floating point issues
+    const brickWidth = Math.round(modelWidth / multX) * multX;
+    const brickDepth = Math.round(modelDepth / multZ) * multZ;
+
+    // Account for model center offset (e.g. L-shaped bricks are asymmetric)
+    const modelCenterX = (modelBox.max.x + modelBox.min.x) / 2;
+    const modelCenterZ = (modelBox.max.z + modelBox.min.z) / 2;
+    const rollOverPos = rollOverBrick.getModel().position;
+    const offsetX = modelCenterX - rollOverPos.x;
+    const offsetZ = modelCenterZ - rollOverPos.z;
+
+    // Calculate left/front edge using model center (not position), snap to grid
+    const leftEdge = position.x + offsetX - brickWidth / 2;
+    const frontEdge = position.z + offsetZ - brickDepth / 2;
+    const snappedLeft = Math.round(leftEdge / multX) * multX;
+    const snappedFront = Math.round(frontEdge / multZ) * multZ;
+    position.x = snappedLeft + brickWidth / 2 - offsetX;
+    position.z = snappedFront + brickDepth / 2 - offsetZ;
 
     rollOverBrick.setPosition(position, true);
 
