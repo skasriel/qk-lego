@@ -194,6 +194,23 @@ export class BasicBrick extends Brick {
     if (state.angle !== 0) {
       brick.rotateY(state.angle);
     }
+    // Load LDraw model asynchronously (same as createBrick does)
+    BasicBrick.loadLDrawModel(state.brickID, state.color, state.colorType).then((ldrawModel) => {
+      if (ldrawModel && brick.model && brick.model.parent) {
+        const parent = brick.model.parent;
+        const position = brick.model.position.clone();
+        const rotation = brick.model.rotation.clone();
+        parent.remove(brick.model);
+        const scaleFactor = 5;
+        ldrawModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+        ldrawModel.position.copy(position);
+        ldrawModel.rotation.copy(rotation);
+        ldrawModel.rotation.x += Math.PI;
+        ldrawModel.name = brick.model.name;
+        parent.add(ldrawModel);
+        brick.model = ldrawModel;
+      }
+    });
     return brick;
   }
 }
