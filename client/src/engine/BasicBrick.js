@@ -4,8 +4,8 @@ import { LDrawLoader } from 'three/examples/jsm/loaders/LDrawLoader.js';
 import { multX, multY, multZ } from '../util';
 import { Brick } from './Brick';
 import { MPDBrick } from './MPDBrick';
-import { GLBBrick } from './GLBBrick';
-import { OBJBrick } from './OBJBrick';
+//import { GLBBrick } from './GLBBrick';
+//import { OBJBrick } from './OBJBrick';
 import { BrickCollections } from './BrickCollections';
 
 const USE_SHADOWS = false;
@@ -191,7 +191,31 @@ export class BasicBrick extends Brick {
     );
     if (state.uuid) brick._uuid = state.uuid;
     brick.setPosition(state.position, true);
-    if (state.angle !== 0) {
+    // Apply full rotation matrix if available, otherwise fall back to Y angle
+    if (state.rotationMatrix && state.rotationMatrix.length === 9) {
+      const m = state.rotationMatrix;
+      brick.model.matrixAutoUpdate = false;
+      brick.model.matrix.set(
+        m[0],
+        m[1],
+        m[2],
+        0,
+        m[3],
+        m[4],
+        m[5],
+        0,
+        m[6],
+        m[7],
+        m[8],
+        0,
+        0,
+        0,
+        0,
+        1
+      );
+      brick.model.matrix.setPosition(brick.model.position);
+      brick.ghostBlock.matrix.copy(brick.model.matrix);
+    } else if (state.angle !== 0) {
       brick.rotateY(state.angle);
     }
     // Load LDraw model asynchronously (same as createBrick does)

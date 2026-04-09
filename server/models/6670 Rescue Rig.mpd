@@ -1,0 +1,197 @@
+0 FILE 6670 - main.ldr 
+0 main
+0 Name: 6670 - main.ldr 
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix
+1 4 10 -40 20 1 0 0 0 1 0 0 0 1 6670 - CAR.LDR 
+1 16 40 0 -160 0.866 0 0.5 0 1 0 -0.5 0 0.866 6670 - ROAD SIGN 1.LDR 
+1 16 -121.69838 0 -121.699371 0.866032 0 0.499988 0 1 0 -0.499988 0 0.866032 6670 - ROAD SIGN 2.LDR 
+1 16 -14 0 -95 0.866 0 0.5 0 1 0 -0.5 0 0.866 6670 - MINIFIG.LDR 
+
+
+0 FILE 6670 - car.ldr 
+0 car
+0 Name: 6670 - car.ldr 
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix
+1 0 -60 0 10 1 0 0 0 1 0 0 0 1 2445.DAT 
+1 16 70 0 20 0 0 -1 0 1 0 1 0 0 4085B.DAT 
+1 16 70 0 0 0 0 -1 0 1 0 1 0 0 4085B.DAT 
+0 STEP
+1 7 60 8 10 0 0 -1 0 1 0 1 0 0 4600.DAT 
+1 7 0 8 10 0 0 -1 0 1 0 1 0 0 4600.DAT 
+1 7 -140 8 10 0 0 -1 0 1 0 1 0 0 4600.DAT 
+1 0 -40 -8 10 1 0 0 0 1 0 0 0 1 2445.DAT 
+1 15 -70 8 0 1 0 0 0 1 0 0 0 1 4081A.DAT 
+1 15 -70 8 20 -1 0 0 0 1 0 0 0 -1 4081A.DAT 
+1 15 -90 8 10 0 0 1 0 1 0 -1 0 0 3023.DAT 
+0 STEP
+1 15 -44 8 -22 0 -1 0 -1 0 0 0 0 -1 3005.DAT 
+1 15 -44 8 41 0 -1 0 -1 0 0 0 0 -1 3005.DAT 
+1 15 -96 8 41 0 1 0 -1 0 0 0 0 1 3005.DAT 
+1 15 -96 8 -22 0 1 0 -1 0 0 0 0 1 3005.DAT 
+1 15 60 12 -20 1 0 0 0 1 0 0 0 1 6014.DAT 
+1 0 60 12 -25 1 0 0 0 1 0 0 0 1 6015.DAT 
+1 15 0 12 -20 1 0 0 0 1 0 0 0 1 6014.DAT 
+1 0 0 12 -25 1 0 0 0 1 0 0 0 1 6015.DAT 
+1 15 -140 12 -20 1 0 0 0 1 0 0 0 1 6014.DAT 
+1 0 -140 12 -25 1 0 0 0 1 0 0 0 1 6015.DAT 
+1 15 -140 12 40 -1 0 0 0 1 0 0 0 -1 6014.DAT 
+1 0 -140 12 45 -1 0 0 0 1 0 0 0 -1 6015.DAT 
+1 15 0 12 40 -1 0 0 0 1 0 0 0 -1 6014.DAT 
+1 0 0 12 45 -1 0 0 0 1 0 0 0 -1 6015.DAT 
+1 15 60 12 40 -1 0 0 0 1 0 0 0 -1 6014.DAT 
+1 0 60 12 45 -1 0 0 0 1 0 0 0 -1 6015.DAT 
+1 0 -80 16 10 0 0 1 0 1 0 -1 0 0 3022.DAT 
+0 STEP
+1 16 70 -16 10 0 0 1 0 1 0 -1 0 0 3794A.DAT 
+1 16 50 -16 10 0 0 1 0 1 0 -1 0 0 3794A.DAT 
+1 16 -30 -16 10 0 0 1 0 1 0 -1 0 0 3794A.DAT 
+1 16 -50 -16 10 0 0 1 0 1 0 -1 0 0 3794A.DAT 
+1 7 0 -16 10 0 0 1 0 1 0 -1 0 0 3068B.DAT 
+1 0 -170 -8 10 0 0 1 0 1 0 -1 0 0 2436A.DAT 
+0 STEP
+1 16 -70 -16 -10 0 0 1 0 1 0 -1 0 0 3794A.DAT 
+1 16 -70 -16 30 0 0 1 0 1 0 -1 0 0 3794A.DAT 
+1 16 30 -16 -10 0 0 1 0 1 0 -1 0 0 3794A.DAT 
+1 16 30 -16 30 0 0 1 0 1 0 -1 0 0 3794A.DAT 
+1 16 -140 -24 10 0 0 1 0 1 0 -1 0 0 4211.DAT 
+0 STEP
+1 16 -90 -24 -20 0 0 -1 0 1 0 1 0 0 2420.DAT 
+1 16 -90 -24 40 -1 0 0 0 1 0 0 0 -1 2420.DAT 
+1 0 0 -24 10 -1 0 0 0 1 0 0 0 -1 3460.DAT 
+0 STEP
+1 46 -170 -24 40 -1 0 0 0 1 0 0 0 -1 3024.DAT 
+1 46 -170 -24 -20 -1 0 0 0 1 0 0 0 -1 3024.DAT 
+1 46 -192 1 -20 0 1 0 1 0 0 0 0 -1 3024.DAT 
+1 46 -192 1 40 0 1 0 1 0 0 0 0 -1 3024.DAT 
+1 15 -192 1 10 0 1 0 0 0 -1 -1 0 0 2412B.DAT 
+1 16 0 -24 -20 -1 0 0 0 1 0 0 0 -1 3034.DAT 
+1 16 0 -24 40 -1 0 0 0 1 0 0 0 -1 3034.DAT 
+1 16 -170 -24 20 0 0 1 0 1 0 -1 0 0 4085C.DAT 
+1 16 -170 -24 0 0 0 1 0 1 0 -1 0 0 4085C.DAT 
+0 STEP
+1 16 -170 -48 30 0 0 1 0 1 0 -1 0 0 2877.DAT 
+1 16 -170 -48 -10 0 0 1 0 1 0 -1 0 0 2877.DAT 
+1 15 -20 -48 -10 1 0 0 0 1 0 0 0 1 4865A.DAT 
+1 15 -20 -48 30 -1 0 0 0 1 0 0 0 -1 4865A.DAT 
+1 0 10 -32 10 0 0 -1 0 1 0 1 0 0 3623.DAT 
+1 15 -150 -24 10 0 0 1 0 1 0 -1 0 0 3829C01.DAT 
+1 7 40 -40 10 1 0 0 0 1 0 0 0 1 4531.DAT 
+1 7 74 -50 10 0 -1 0 0 0 -1 1 0 0 2452.DAT 
+0 STEP
+1 7 106 -50 10 0 -1 0 0 0 1 -1 0 0 2432.DAT 
+1 16 -50 -48 10 0 0 -1 0 1 0 1 0 0 3622.DAT 
+1 7 -70 -48 50 0 0 -1 0 1 0 1 0 0 3062B.DAT 
+1 7 -70 -48 -30 0 0 -1 0 1 0 1 0 0 3062B.DAT 
+1 16 30 -48 -30 0 0 -1 0 1 0 1 0 0 4286.DAT 
+1 16 30 -48 50 0 0 -1 0 1 0 1 0 0 4286.DAT 
+0 STEP
+1 16 -20 -48 -30 1 0 0 0 1 0 0 0 1 3010.DAT 
+1 16 -20 -48 50 1 0 0 0 1 0 0 0 1 3010.DAT 
+1 16 -90 -48 10 0 0 -1 0 1 0 1 0 0 3010.DAT 
+1 16 -150 -48 -20 0 0 1 0 1 0 -1 0 0 3822.DAT 
+1 16 -150 -48 40 0 0 1 0 1 0 -1 0 0 3821.DAT 
+0 STEP
+1 16 -50 -72 -30 0 0 -1 0 1 0 1 0 0 4286.DAT 
+1 16 -50 -72 50 0 0 -1 0 1 0 1 0 0 4286.DAT 
+1 16 -50 -72 10 0 0 -1 0 1 0 1 0 0 3622.DAT 
+1 7 -70 -72 -30 0 0 -1 0 1 0 1 0 0 3062B.DAT 
+1 7 -70 -72 50 0 0 -1 0 1 0 1 0 0 3062B.DAT 
+0 STEP
+1 7 -60 -80 40 0 0 -1 0 1 0 1 0 0 3022.DAT 
+1 7 -60 -80 -20 0 0 -1 0 1 0 1 0 0 3022.DAT 
+1 43 -150 -96 10 0 0 1 0 1 0 -1 0 0 3823.DAT 
+1 15 -190 -40 10 0 0 1 0 1 0 -1 0 0 6016.DAT 
+0 STEP
+1 7 -70 -104 50 0 0 -1 0 1 0 1 0 0 3062B.DAT 
+1 7 -70 -104 -30 0 0 -1 0 1 0 1 0 0 3062B.DAT 
+1 16 -90 -96 10 0 0 1 0 1 0 -1 0 0 4214.DAT 
+1 16 -120 -104 10 0 0 1 0 1 0 -1 0 0 4213.DAT 
+1 15 -50 -104 50 0 0 -1 0 1 0 1 0 0 4070.DAT 
+1 15 -50 -104 30 0 0 -1 0 1 0 1 0 0 4070.DAT 
+1 15 -50 -104 -10 0 0 -1 0 1 0 1 0 0 4070.DAT 
+1 15 -50 -104 -30 0 0 -1 0 1 0 1 0 0 4070.DAT 
+0 STEP
+1 15 -36 -94 40 0 -1 0 0 0 1 -1 0 0 3069BP09.DAT 
+1 15 -36 -94 -20 0 -1 0 0 0 1 -1 0 0 3069BP09.DAT 
+1 15 -50 -112 10 0 0 -1 0 1 0 1 0 0 3623.DAT 
+1 46 -50 -112 50 0 0 -1 0 1 0 1 0 0 3024.DAT 
+1 46 -50 -112 -30 0 0 -1 0 1 0 1 0 0 3024.DAT 
+1 15 -50 -112 10 0 0 1 0 1 0 -1 0 0 4592C01.DAT 
+1 46 -110 -112 40 -1 0 0 0 1 0 0 0 -1 6141.DAT 
+1 46 -110 -112 -20 -1 0 0 0 1 0 0 0 -1 6141.DAT 
+1 0 -130 -112 20 -1 0 0 0 1 0 0 0 -1 2555.DAT 
+1 0 -130 -112 0 -1 0 0 0 1 0 0 0 -1 2555.DAT 
+0 STEP
+1 15 -126 -119 33 0 -1 0 -1 0 0 0 0 -1 4599A.DAT 
+1 15 -126 -119 -13 0 -1 0 1 0 0 0 0 1 4599A.DAT 
+1 36 -50 -136 -10 1 0 0 0 1 0 0 0 1 3040B.DAT 
+1 36 -50 -136 30 -1 0 0 0 1 0 0 0 -1 3040B.DAT 
+1 7 -70 -144 50 -1 0 0 0 1 0 0 0 -1 2343.DAT 
+1 7 -70 -144 -30 -1 0 0 0 1 0 0 0 -1 2343.DAT 
+
+
+0 FILE 6670 - minifig.ldr 
+0 minifig
+0 Name: 6670 - minifig.ldr 
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix
+1 1 0 -28 0 1 0 0 0 1 0 0 0 1 3816.DAT 
+1 1 0 -28 0 1 0 0 0 1 0 0 0 1 3817.DAT 
+1 14 -23.471001 -46 -9.88 1 -0.12 0.122 0.171 0.694 -0.699 0 0.709 0.705 3820.DAT 
+1 14 23.524 -46 -10.093 1 0.121 -0.121 -0.171 0.694 -0.699 0 0.709 0.705 3820.DAT 
+1 15 -15.357 -64 0 1 -0.171 0 0.171 1 0 0 0 1 3818.DAT 
+1 15 15.35 -63.949001 0 1 0.171 0 -0.171 1 0 0 0 1 3819.DAT 
+1 1 0 -40 0 1 0 0 0 1 0 0 0 1 3815.DAT 
+1 2 0 -72 0 1 0 0 0 1 0 0 0 1 973P73.DAT 
+1 14 0 -96 0 1 0 0 0 1 0 0 0 1 3626BP7E.DAT 
+1 1 0 -96 0 1 0 0 0 1 0 0 0 1 4485.DAT 
+
+
+0 FILE 6670 - road sign 1.ldr 
+0 road sign 1
+0 Name: 6670 - road sign 1.ldr 
+1 15 0 -20 0 1 0 0 0 0 -1 0 1 0 3068BP06.DAT 
+1 15 0 -10 8 1 0 0 0 0 -1 0 1 0 3023.DAT 
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix
+
+
+0 FILE 6670 - road sign 2.ldr 
+0 road sign 2
+0 Name: 6670 - road sign 2.ldr 
+1 15 0 -20 0 -1 0 0 0 0 1 0 1 0 3068BP05.DAT 
+1 15 0 -10 8 -1 0 0 0 0 1 0 1 0 3023.DAT 
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix

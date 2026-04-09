@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const http = require('http');
+const { bricksToMPD, parseMPD, normalizeBricksToFloor } = require('./mpd-utils');
 
 // Enable JSON parsing for POST requests
 app.use(express.json());
@@ -45,7 +46,7 @@ class Action {
 
 const fs = require('fs');
 const dataDir = process.env.PLATFORM_APP_DIR ? path.join(process.env.PLATFORM_APP_DIR, 'data') : path.join(__dirname, '..');
-const worldFileName = path.join(dataDir, 'world.json');
+const worldFileName = path.join(dataDir, 'world.mpd');
 const scenesDir = path.join(dataDir, 'scenes');
 
 // Ensure scenes directory exists
@@ -53,22 +54,32 @@ if (!fs.existsSync(scenesDir)) {
   fs.mkdirSync(scenesDir, { recursive: true });
 }
 function loadWorldFromDisk() {
-  if (!fs.existsSync(worldFileName)) {
-    console.log(`File ${worldFileName} not found -> starting from empty world`);
+  const mpdWorldFile = worldFileName.replace('.json', '.mpd');
+  if (!fs.existsSync(mpdWorldFile)) {
+    // Try legacy JSON format
+    if (!fs.existsSync(worldFileName)) {
+      console.log(`File ${worldFileName} not found -> starting from empty world`);
+      return;
+    }
+    console.log(`Loading legacy JSON world from ${worldFileName}`);
+    let worldText = fs.readFileSync(worldFileName, 'utf8');
+    if (worldText.length == 0) {
+      console.log(`Empty file ${worldFileName} -> starting from empty world`);
+      return;
+    }
+    let worldObject = JSON.parse(worldText);
+    if (worldObject.version != FILE_VERSION_CURRENT) {
+      console.log(`Incorrect file version ${worldObject.version}, expected ${FILE_VERSION_CURRENT}`);
+      return;
+    }
+    bricks = worldObject.world || [];
     return;
   }
-  let worldText = fs.readFileSync(worldFileName, 'utf8');
-  if (worldText.length==0) {
-    console.log(`Empty file ${worldFileName} -> starting from empty world`);
-    return;
-  }
-  let worldObject = JSON.parse(worldText);
-  if (worldObject.version != FILE_VERSION_CURRENT) {
-    console.log(`Incorrect file version ${worldObject.version}, expected ${FILE_VERSION_CURRENT}`);
-    return;
-  }
-  let hash = worldObject.hash;
-  bricks = worldObject.world;
+  
+  // Load MPD format
+  console.log(`Loading MPD world from ${mpdWorldFile}`);
+  const mpdContent = fs.readFileSync(mpdWorldFile, 'utf8');
+  bricks = parseMPD(mpdContent, mpdWorldFile);
 }
 loadWorldFromDisk();
 
@@ -81,9 +92,8 @@ function persistWorld() {
   return response;
 }
 function saveWorldToDisk() { // TODO: use async version of writeFile
-  const object = persistWorld();
-  const json = JSON.stringify(object, null, 2); // pretty-print to file
-  fs.writeFileSync(worldFileName, json);
+  const mpdContent = bricksToMPD(bricks, 'Current World');
+  fs.writeFileSync(worldFileName.replace('.json', '.mpd'), mpdContent);
 }
 
 app.use(function (req, res, next) { // TODO: either do something here or delete
@@ -136,21 +146,14 @@ app.post('/api/scenes/save', function(req, res) {
   }
   
   // Sanitize filename
-  const safeName = name.trim().replace(/[^a-z0-9_\-\.]/gi, '_').substring(0, 100);
-  const sceneFile = path.join(scenesDir, `${safeName}.json`);
-  
-  const sceneData = {
-    version: FILE_VERSION_CURRENT,
-    name: name,
-    savedAt: new Date().toISOString(),
-    numberBricks: bricks.length,
-    world: bricks,
-  };
+  const safeNameSave = name.trim().replace(/[^a-z0-9_\-\.]/gi, '_').substring(0, 100);
+  const sceneFile = path.join(scenesDir, `${safeNameSave}.mpd`);
   
   try {
-    fs.writeFileSync(sceneFile, JSON.stringify(sceneData, null, 2));
-    console.log(`Saved scene "${name}" to ${sceneFile}`);
-    res.json({ success: true, name: name, path: safeName });
+    const mpdContent = bricksToMPD(bricks, name);
+    fs.writeFileSync(sceneFile, mpdContent);
+    console.log(`Saved scene "${name}" to ${sceneFile} (${bricks.length} bricks)`);
+    res.json({ success: true, name: name, path: safeNameSave });
   } catch (err) {
     console.error(`Failed to save scene: ${err}`);
     res.status(500).json({ error: 'Failed to save scene' });
@@ -162,20 +165,85 @@ app.post('/api/scenes/save', function(req, res) {
  */
 app.get('/api/scenes/list', function(req, res) {
   try {
-    const files = fs.readdirSync(scenesDir);
-    const scenes = files
-      .filter(f => f.endsWith('.json'))
-      .map(f => {
-        const filePath = path.join(scenesDir, f);
-        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        return {
-          name: data.name || f.replace('.json', ''),
-          filename: f.replace('.json', ''),
-          savedAt: data.savedAt,
-          numberBricks: data.numberBricks || 0,
-        };
-      })
-      .sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+    const scenes = [];
+    
+    // Add user-saved scenes
+    if (fs.existsSync(scenesDir)) {
+      const files = fs.readdirSync(scenesDir);
+      files
+        .filter(f => f.endsWith('.mpd') || f.endsWith('.json'))
+        .forEach(f => {
+          const filePath = path.join(scenesDir, f);
+          const isMPD = f.endsWith('.mpd');
+          const stats = fs.statSync(filePath);
+          
+          if (isMPD) {
+            // For MPD files, parse to count bricks
+            const content = fs.readFileSync(filePath, 'utf8');
+            const brickCount = (content.match(/^1\s+/gm) || []).length;
+            const name = f.replace('.mpd', '');
+            scenes.push({
+              name: name,
+              filename: f.replace('.mpd', ''),
+              savedAt: stats.mtime.toISOString(),
+              numberBricks: brickCount,
+              type: 'user',
+            });
+          } else {
+            // Legacy JSON format
+            const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            scenes.push({
+              name: data.name || f.replace('.json', ''),
+              filename: f.replace('.json', ''),
+              savedAt: data.savedAt,
+              numberBricks: data.numberBricks || 0,
+              type: 'user',
+            });
+          }
+        });
+    }
+    
+    // Add pre-loaded models from server/models
+    const modelsDir = path.join(__dirname, 'models');
+    if (fs.existsSync(modelsDir)) {
+      const modelFiles = fs.readdirSync(modelsDir).filter(f => f.endsWith('.mpd'));
+      modelFiles.forEach(f => {
+        const filePath = path.join(modelsDir, f);
+        const stats = fs.statSync(filePath);
+        const content = fs.readFileSync(filePath, 'utf8');
+        const brickCount = (content.match(/^1\s+/gm) || []).length;
+        
+        // Extract name from MPD file (look for Name: line or use filename)
+        const nameMatch = content.match(/^0\s+Name:\s*(.+?)$/m);
+        let displayName = f.replace('.mpd', '');
+        if (nameMatch) {
+          displayName = nameMatch[1].trim();
+        } else {
+          // Try to extract from first comment line
+          const firstLine = content.split('\n').find(l => l.startsWith('0 ') && !l.startsWith('0 FILE'));
+          if (firstLine) {
+            displayName = firstLine.replace(/^0\s+/, '').trim();
+          }
+        }
+        
+        scenes.push({
+          name: displayName,
+          filename: f.replace('.mpd', ''),
+          savedAt: stats.mtime.toISOString(),
+          numberBricks: brickCount,
+          type: 'builtin',
+          id: f.replace('.mpd', ''),
+        });
+      });
+    }
+    
+    // Sort by type (builtin first), then by date
+    scenes.sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === 'builtin' ? -1 : 1;
+      }
+      return new Date(b.savedAt) - new Date(a.savedAt);
+    });
     
     res.json({ scenes });
   } catch (err) {
@@ -190,29 +258,62 @@ app.get('/api/scenes/list', function(req, res) {
 app.get('/api/scenes/load/:name', function(req, res) {
   const { name } = req.params;
   const safeName = name.replace(/[^a-z0-9_\-\.]/gi, '_');
-  const sceneFile = path.join(scenesDir, `${safeName}.json`);
-  
-  if (!fs.existsSync(sceneFile)) {
+
+  const candidates = [
+    { file: path.join(scenesDir, `${name}.mpd`), isMPD: true },
+    { file: path.join(scenesDir, `${safeName}.mpd`), isMPD: true },
+    { file: path.join(scenesDir, `${name}.json`), isMPD: false },
+    { file: path.join(scenesDir, `${safeName}.json`), isMPD: false },
+    { file: path.join(__dirname, 'models', `${name}.mpd`), isMPD: true },
+    { file: path.join(__dirname, 'models', `${safeName}.mpd`), isMPD: true },
+    { file: path.join(__dirname, 'models', `${name}.ldr`), isMPD: true },
+    { file: path.join(__dirname, 'models', `${safeName}.ldr`), isMPD: true },
+  ];
+
+  const match = candidates.find(({ file }) => fs.existsSync(file));
+
+  if (!match) {
     return res.status(404).json({ error: 'Scene not found' });
   }
+
+  const sceneFile = match.file;
+  const isMPD = match.isMPD;
   
   try {
-    const sceneData = JSON.parse(fs.readFileSync(sceneFile, 'utf8'));
-    if (sceneData.version !== FILE_VERSION_CURRENT) {
-      return res.status(400).json({ error: 'Incompatible scene version' });
+    console.log(`Loading scene: name="${name}", file="${sceneFile}", isMPD=${isMPD}`);
+    if (isMPD) {
+      // Load MPD file
+      const mpdContent = fs.readFileSync(sceneFile, 'utf8');
+      const loadedBricks = parseMPD(mpdContent, sceneFile);
+      bricks = normalizeBricksToFloor(loadedBricks);
+      saveWorldToDisk();
+      
+      console.log(`Loaded MPD scene "${name}" with ${bricks.length} bricks`);
+      res.json({ 
+        success: true, 
+        name: name,
+        world: bricks,
+        worldHash: getWorldSignature()
+      });
+    } else {
+      // Legacy JSON format
+      const sceneData = JSON.parse(fs.readFileSync(sceneFile, 'utf8'));
+      if (sceneData.version !== FILE_VERSION_CURRENT) {
+        return res.status(400).json({ error: 'Incompatible scene version' });
+      }
+      
+      // Load into current world
+      bricks = sceneData.world || [];
+      saveWorldToDisk();
+      
+      console.log(`Loaded scene "${sceneData.name}" with ${bricks.length} bricks`);
+      res.json({ 
+        success: true, 
+        name: sceneData.name,
+        world: bricks,
+        worldHash: getWorldSignature()
+      });
     }
-    
-    // Load into current world
-    bricks = sceneData.world || [];
-    saveWorldToDisk();
-    
-    console.log(`Loaded scene "${sceneData.name}" with ${bricks.length} bricks`);
-    res.json({ 
-      success: true, 
-      name: sceneData.name,
-      world: bricks,
-      worldHash: getWorldSignature()
-    });
   } catch (err) {
     console.error(`Failed to load scene: ${err}`);
     res.status(500).json({ error: 'Failed to load scene' });

@@ -1,0 +1,274 @@
+0 FILE 6331 - main.ldr
+0 main
+0 Name: 6331 - main.ldr 
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix
+1 4 -90 -64 -80 1 0 0 0 1 0 0 0 1 6331 - AIRPLANE.LDR 
+1 4 -280 0 -310 -0.5 0 0.866 0 1 0 -0.866 0 -0.5 6331 - MINIFIG 1.LDR 
+1 4 -327.321014 0 -150 0.866 0 0.5 0 1 0 -0.5 0 0.866 6331 - MINIFIG 2.LDR 
+1 4 -510 0 -120 0.5 0 0.866 0 1 0 -0.866 0 0.5 6331 - TOOL BOX.LDR 
+1 8 -520 -8 -220 -0.94 -0.342 0 0 0 -1 0.342 -0.94 0 55300.DAT 
+1 8 -460 -16 -200 1 0 0 0 1 -0.174 0 0.174 1 55296.DAT 
+1 8 -510 -8 -270 0 -1 0 0 0 1 -1 0 0 55299.DAT 
+1 8 -580 -16 -210 -0.174 -0.925 0.337 -0.985 0.163 -0.059 0 -0.342 -0.94 55297.DAT 
+1 8 -429.933014 -8 -267.28299 0 0.866 -0.5 -1 0 0 0 0.5 0.866 55298.DAT 
+1 8 -540 -8 -300 0.643 -0.766 0 0 0 -1 0.766 0.643 0 55295.DAT 
+
+
+
+0 FILE 6331 - airplane.ldr
+0 airplane
+0 Name: 6331 - airplane.ldr
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix
+1 4 -100 0 -60 1 0 0 0 1 0 0 0 1 2625.DAT
+1 4 -100 0 120 -1 0 0 0 1 0 0 0 -1 2625.DAT
+1 4 -100 0 30 -1 0 0 0 1 0 0 0 -1 3795.DAT
+0 STEP
+1 7 -100 -8 30 0 0 -1 0 1 0 1 0 0 3020.DAT
+1 4 -100 -24 80 1 0 0 0 1 0 0 0 1 3004.DAT
+0 STEP
+1 0 -100 -16 60 1 0 0 0 1 0 0 0 1 2412B.DAT
+1 0 -100 -16 0 1 0 0 0 1 0 0 0 1 2412B.DAT
+1 0 -100 -16 30 1 0 0 0 1 0 0 0 1 3068BP51.DAT
+0 STEP
+1 4 -140 -24 60 0 0 1 0 1 0 -1 0 0 3002.DAT
+1 4 -60 -24 60 0 0 1 0 1 0 -1 0 0 3002.DAT
+1 4 -100 -24 -20 -1 0 0 0 1 0 0 0 -1 3009.DAT
+0 STEP
+1 14 -100 -24 140 -1 0 0 0 1 0 0 0 -1 3004.DAT
+1 14 -100 -8 -50 -1 0 0 0 1 0 0 0 -1 3022.DAT
+1 14 -100 -8 -80 -1 0 0 0 1 0 0 0 -1 3069B.DAT
+0 STEP
+1 0 -40 -24 10 0 0 -1 0 1 0 1 0 0 4871.DAT
+1 0 -160 -24 10 0 0 -1 0 1 0 1 0 0 4871.DAT
+1 4 -60 -24 -60 1 0 0 0 1 0 0 0 1 6565.DAT
+1 4 -140 -24 -60 1 0 0 0 1 0 0 0 1 6564.DAT
+1 4 -60 -24 120 -1 0 0 0 1 0 0 0 -1 6564.DAT
+1 4 -140 -24 120 -1 0 0 0 1 0 0 0 -1 6565.DAT
+0 STEP
+1 4 -100 -24 -140 -1 0 0 0 1 0 0 0 -1 4856.DAT
+1 7 -100 -32 80 1 0 0 0 1 0 0 0 1 4596.DAT
+1 4 -100 -24 200 1 0 0 0 1 0 0 0 1 4856.DAT
+0 STEP
+1 1 -100 -16 -110 1 0 0 0 1 0 0 0 1 3022.DAT
+1 15 -100 -32 -190 1 0 0 0 1 0 0 0 1 4859.DAT
+1 15 -100 -32 -20 1 0 0 0 1 0 0 0 1 3023.DAT
+1 15 -130 -32 130 0 0 1 0 1 0 -1 0 0 3666.DAT
+1 15 -70 -32 130 0 0 1 0 1 0 -1 0 0 3666.DAT
+1 15 -130 -32 -70 0 0 1 0 1 0 -1 0 0 3460.DAT
+1 15 -70 -32 -70 0 0 1 0 1 0 -1 0 0 3460.DAT
+1 15 -100 -32 190 0 0 1 0 1 0 -1 0 0 3795.DAT
+0 STEP
+1 15 -260 -32 40 1 0 0 0 1 0 0 0 1 3585.DAT
+1 15 60 -32 40 1 0 0 0 1 0 0 0 1 3586.DAT
+1 15 -160 -32 210 0 0 1 0 1 0 -1 0 0 3936.DAT
+1 15 -40 -32 210 0 0 -1 0 1 0 1 0 0 3935.DAT
+1 46 -70 -32 60 0 0 -1 0 1 0 1 0 0 3024.DAT
+1 46 -130 -32 60 0 0 -1 0 1 0 1 0 0 3024.DAT
+1 0 -130 -32 30 0 0 -1 0 1 0 1 0 0 3069BP28.DAT
+1 0 -70 -32 30 0 0 -1 0 1 0 1 0 0 3069BP28.DAT
+0 STEP
+1 0 -30 -24 40 0 0 -1 0 1 0 1 0 0 3676.DAT
+1 0 -170 -24 40 -1 0 0 0 1 0 0 0 -1 3676.DAT
+1 15 -150 8 70 0 0 1 0 1 0 -1 0 0 2540.DAT
+1 15 -50 8 70 0 0 -1 0 1 0 1 0 0 2540.DAT
+1 15 -100 8 70 1 0 0 0 1 0 0 0 1 3020.DAT
+1 15 -100 8 -90 1 0 0 0 1 0 0 0 1 3680C01.DAT
+0 STEP
+1 1 160 -24 100 -1 0 0 0 1 0 0 0 -1 3839A.DAT
+1 1 -360 -24 100 -1 0 0 0 1 0 0 0 -1 3839A.DAT
+1 7 -10 10 74 0 0 1 -1 0 0 0 -1 0 4085C.DAT
+1 46 -10 10 66 0 0 1 -1 0 0 0 -1 0 3024.DAT
+1 7 -190 10 74 0 0 -1 1 0 0 0 -1 0 4085C.DAT
+1 46 -190 10 66 0 0 -1 1 0 0 0 -1 0 3024.DAT
+1 7 -100 16 -90 1 0 0 0 1 0 0 0 1 4870.DAT
+1 7 -140 16 70 1 0 0 0 1 0 0 0 1 4870.DAT
+1 7 -60 16 70 1 0 0 0 1 0 0 0 1 4870.DAT
+1 7 -152 46 85 0 0 1 0 1 0 -1 0 0 4624.DAT
+1 0 -151 46 85 -1 0 0 0 1 0 0 0 -1 3139.DAT
+1 7 -127 46 85 0 0 1 0 1 0 -1 0 0 4624.DAT
+1 0 -126 46 85 -1 0 0 0 1 0 0 0 -1 3139.DAT
+1 7 -72 46 85 0 0 1 0 1 0 -1 0 0 4624.DAT
+1 0 -71 46 85 -1 0 0 0 1 0 0 0 -1 3139.DAT
+1 7 -47 46 85 0 0 1 0 1 0 -1 0 0 4624.DAT
+1 0 -46 46 85 -1 0 0 0 1 0 0 0 -1 3139.DAT
+1 7 -112 46 -75 0 0 1 0 1 0 -1 0 0 4624.DAT
+1 0 -111 46 -75 -1 0 0 0 1 0 0 0 -1 3139.DAT
+1 7 -87 46 -75 0 0 1 0 1 0 -1 0 0 4624.DAT
+1 0 -86 46 -75 -1 0 0 0 1 0 0 0 -1 3139.DAT
+0 STEP
+1 15 -100 -48 260 -1 0 0 0 1 0 0 0 -1 3700.DAT
+1 1 -70 -40 -20 0 0 1 0 1 0 -1 0 0 2420.DAT
+1 1 -130 -40 -20 -1 0 0 0 1 0 0 0 -1 2420.DAT
+1 1 -100 -40 100 -1 0 0 0 1 0 0 0 -1 3710.DAT
+1 1 -70 -40 200 -1 0 0 0 1 0 0 0 -1 2420.DAT
+1 1 -130 -40 200 0 0 1 0 1 0 -1 0 0 2420.DAT
+1 1 -130 -40 150 0 0 1 0 1 0 -1 0 0 3069B.DAT
+1 1 -70 -40 150 0 0 1 0 1 0 -1 0 0 3069B.DAT
+1 1 -100 -40 120 -1 0 0 0 1 0 0 0 -1 2431.DAT
+0 STEP
+1 1 -150 -40 30 0 0 1 0 1 0 -1 0 0 3710.DAT
+1 1 -50 -40 30 0 0 1 0 1 0 -1 0 0 3710.DAT
+1 1 -100 -40 80 -1 0 0 0 1 0 0 0 -1 3666.DAT
+1 1 -100 -56 260 -1 0 0 0 1 0 0 0 -1 3069B.DAT
+1 1 -100 -40 -20 -1 0 0 0 1 0 0 0 -1 3023.DAT
+1 7 -100 -40 -120 -1 0 0 0 1 0 0 0 -1 3039PC5.DAT
+0 STEP
+1 1 -100 -56 160 -1 0 0 0 1 0 0 0 -1 3039.DAT
+1 1 -100 -56 240 1 0 0 0 1 0 0 0 1 4865A.DAT
+1 14 -100 -48 80 -1 0 0 0 1 0 0 0 -1 3710.DAT
+1 14 -100 -40 -40 1 0 0 0 1 0 0 0 1 2432.DAT
+0 STEP
+1 0 -100 -48 10 -1 0 0 0 1 0 0 0 -1 4590.DAT
+1 0 -100 -56 10 -1 0 0 0 1 0 0 0 -1 3069BP28.DAT
+1 15 -100 -48 -120 -1 0 0 0 1 0 0 0 -1 3069BP80.DAT
+1 1 -100 -64 100 -1 0 0 0 1 0 0 0 -1 2399.DAT
+1 1 -100 -38 270 0 0 1 1 0 0 0 1 0 2460.DAT
+1 1 -100 -56 80 -1 0 0 0 1 0 0 0 -1 3710.DAT
+1 1 -130 -40 240 0 0 -1 0 1 0 1 0 0 3623.DAT
+1 1 -70 -40 240 0 0 -1 0 1 0 1 0 0 3623.DAT
+0 STEP
+1 1 -130 -64 240 1 0 0 0 1 0 0 0 1 4286.DAT
+1 1 -70 -64 240 1 0 0 0 1 0 0 0 1 4286.DAT
+1 1 -130 -64 260 -1 0 0 0 1 0 0 0 -1 4287a.dat
+1 1 -70 -64 260 -1 0 0 0 1 0 0 0 -1 4287a.dat
+1 1 -50 -64 70 0 0 -1 0 1 0 1 0 0 4865A.DAT
+1 1 -50 -64 30 0 0 -1 0 1 0 1 0 0 4865A.DAT
+1 1 -50 -64 -10 0 0 -1 0 1 0 1 0 0 4865A.DAT
+1 1 -150 -64 -10 0 0 1 0 1 0 -1 0 0 4865A.DAT
+1 1 -150 -64 30 0 0 1 0 1 0 -1 0 0 4865A.DAT
+1 1 -150 -64 70 0 0 1 0 1 0 -1 0 0 4865A.DAT
+1 0 -100 -38 278 0 0 1 1 0 0 0 1 0 3941.DAT
+0 STEP
+1 1 -70 -136 310 1 0 0 0 1 0 0 0 1 2340.DAT
+1 1 -130 -136 310 1 0 0 0 1 0 0 0 1 2340.DAT
+1 1 -110 -64 130 0 0 1 0 1 0 -1 0 0 2431.DAT
+1 1 -130 -64 -20 0 0 1 0 1 0 -1 0 0 2357.DAT
+1 1 -70 -64 -20 -1 0 0 0 1 0 0 0 -1 2357.DAT
+1 1 -130 -56 -70 0 0 -1 0 1 0 1 0 0 4865A.DAT
+1 1 -70 -56 -70 0 0 1 0 1 0 -1 0 0 4865A.DAT
+1 1 -90 -64 130 0 0 1 0 1 0 -1 0 0 2431.DAT
+0 STEP
+1 1 -70 -72 -30 0 0 1 0 1 0 -1 0 0 3069B.DAT
+1 1 -130 -72 -30 0 0 1 0 1 0 -1 0 0 3069B.DAT
+1 7 -100 -48 -140 1 0 0 0 1 0 0 0 1 3069BP02.DAT
+1 1 -100 -56 -140 1 0 0 0 1 0 0 0 1 6153.DAT
+1 1 -70 -144 310 0 0 1 0 1 0 -1 0 0 3069B.DAT
+1 1 -130 -144 310 0 0 1 0 1 0 -1 0 0 3069B.DAT
+1 1 -100 -64 30 1 0 0 0 1 0 0 0 1 4213.DAT
+1 1 -100 -64 80 1 0 0 0 1 0 0 0 1 4315.DAT
+0 STEP
+1 1 -100 -72 80 1 0 0 0 1 0 0 0 1 3794A.DAT
+1 4 -100 -72 10 1 0 0 0 1 0 0 0 1 3022.DAT
+1 1 -130 -72 10 0 0 1 0 1 0 -1 0 0 3069B.DAT
+1 1 -70 -72 10 0 0 1 0 1 0 -1 0 0 3069B.DAT
+1 43 -100 -88 -90 1 0 0 0 1 0 0 0 1 6152.DAT
+0 STEP
+1 1 -100 -96 -40 -1 0 0 0 1 0 0 0 -1 4858.DAT
+1 1 -100 -104 -40 -1 0 0 0 1 0 0 0 -1 3710.DAT
+1 1 -100 -96 -90 1 0 0 0 1 0 0 0 1 4859.DAT
+0 STEP
+1 1 -100 -104 -70 1 0 0 0 1 0 0 0 1 3068B.DAT
+1 34 -370 -40 80 1 0 0 0 1 0 0 0 1 6141.DAT
+1 36 170 -40 80 1 0 0 0 1 0 0 0 1 6141.DAT
+1 1 -100 -80 80 1 0 0 0 1 0 0 0 1 4592.DAT
+1 7 -100 -80 80 1 0 0 0 0.866 0.5 0 -0.5 0.866 4593.DAT
+
+0 FILE 6331 - tool box.ldr
+0 tool box
+0 Name: 6331 - tool box.ldr 
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix
+1 1 -10 -72 0 1 0 0 0 1 0 0 0 1 4532.DAT 
+1 1 20 -24 0 0 0 1 0 1 0 -1 0 0 2655.DAT 
+1 1 -20 -24 0 0 0 1 0 1 0 -1 0 0 2655.DAT 
+1 1 30 -48 10 0 0 -1 0 1 0 1 0 0 4070.DAT 
+1 1 30 -48 -10 0 0 -1 0 1 0 1 0 0 4070.DAT 
+1 0 -20 -8 0 0 0 1 0 1 0 -1 0 0 2496.DAT 
+1 0 20 -8 0 0 0 1 0 1 0 -1 0 0 2496.DAT 
+1 14 -10 -68 0 1 0 0 0 1 0 0 0 1 4536.DAT 
+1 14 -10 -50 0 1 0 0 0 1 0 0 0 1 4536.DAT 
+0 STEP
+1 1 30 -56 0 0 0 -1 0 1 0 1 0 0 3023.DAT 
+0 STEP
+1 1 30 -64 -10 1 0 0 0 1 0 0 0 1 4085C.DAT 
+1 1 30 -64 10 -1 0 0 0 1 0 0 0 -1 4085C.DAT 
+0 STEP
+1 1 30 -72 10 0 0 -1 0 1 0 1 0 0 4085C.DAT 
+1 1 30 -72 -10 0 0 -1 0 1 0 1 0 0 4085C.DAT 
+0 STEP
+1 1 0 -80 0 1 0 0 0 1 0 0 0 1 3020.DAT 
+1 1 68 -37 0 0 -1 0 0 0 -1 1 0 0 2432.DAT 
+
+
+
+0 FILE 6331 - minifig 1.ldr
+0 minifig 1
+0 Name: 6331 - minifig 1.ldr 
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix
+1 14 0 -96 0 1 0 0 0 1 0 0 0 1 3626BP05.DAT 
+1 1 0 -72 0 1 0 0 0 1 0 0 0 1 973P81.DAT 
+1 1 0 -40 0 1 0 0 0 1 0 0 0 1 3815.DAT 
+1 1 15.5 -64 0 1 0.17 0 -0.17 1 0 0 0 1 3819.DAT 
+1 1 -15.5 -64 0 1 -0.17 0 0.17 1 0 0 0 1 3818.DAT 
+1 0 23.658001 -46.148998 -10 1 0.12 -0.12 -0.17 0.697 -0.697 0 0.707 0.707 3820.DAT 
+1 0 -23.658001 -46.148998 -10 1 -0.12 0.12 0.17 0.697 -0.697 0 0.707 0.707 3820.DAT 
+1 1 0 -28 0 1 0 0 0 1 0 0 0 1 3817.DAT 
+1 1 0 -28 0 1 0 0 0 1 0 0 0 1 3816.DAT 
+1 15 20.771999 -62.851002 -45.759003 1 -0.12 -0.12 -0.17 -0.697 -0.697 0 0.707 -0.707 3900.DAT 
+1 15 -20.771999 -62.851002 -45.759003 1 0.12 0.12 0.17 -0.697 -0.697 0 0.707 -0.707 3900.DAT 
+1 34 -21.733999 -57.276001 -51.416 1 0.12 0.12 0.17 -0.697 -0.697 0 0.707 -0.707 6141.DAT 
+1 36 21.733999 -57.276001 -51.416 1 -0.12 -0.12 -0.17 -0.697 -0.697 0 0.707 -0.707 6141.DAT 
+1 15 0 -96 0.182 1 0 0 0 1 0 0 0 1 4485.DAT 
+
+
+
+0 FILE 6331 - minifig 2.ldr
+0 minifig 2
+0 Name: 6331 - minifig 2.ldr
+0 Author: Robert Paciorek [bercik]
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt
+0 !HELP Copyright (c) 2002-2017, Robert Paciorek (http://www.opcode.eu.org/)
+0 !HELP Released under a dual license, you can choise "CCAL version 2.0" or "BSD/MIT-type licence":
+0 !HELP Redistribution and use in source or any others forms, with or without modification, ARE PERMITTED provided save information about author(s).
+0 !HELP This material is distributed WITHOUT any warranty, use at YOUR own risk.
+0 !HISTORY 2017-04-07 [bercik] first OMR version
+0 !HISTORY 2018-01-21 [bercik] bugfix
+1 4 0 -96 0 1 0 0 0 1 0 0 0 1 2446.DAT
+1 43 0 -96 0 1 0 0 0 1 0 0 0 1 2447.DAT
+1 14 0 -96 0 1 0 0 0 1 0 0 0 1 3626BP04.DAT
+1 4 0 -72 0 1 0 0 0 1 0 0 0 1 973P1H.DAT
+1 4 0 -40 0 1 0 0 0 1 0 0 0 1 3815.DAT
+1 4 15.5 -64 0 1 0.17 0 -0.17 1 0 0 0 1 3819.DAT
+1 4 -15.5 -64 0 1 -0.17 0 0.17 1 0 0 0 1 3818.DAT
+1 4 23.658001 -46.148998 -10 1 0.12 -0.12 -0.17 0.697 -0.697 0 0.707 0.707 3820.DAT
+1 14 -23.658001 -46.148998 -10 1 -0.12 0.12 0.17 0.697 -0.697 0 0.707 0.707 3820.DAT
+1 4 0 -28 0 1 0 0 0 1 0 0 0 1 3817.DAT
+1 4 0 -28 0 1 0 0 0 1 0 0 0 1 3816.DAT
+

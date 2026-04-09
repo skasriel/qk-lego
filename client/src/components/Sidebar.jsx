@@ -365,29 +365,47 @@ class Sidebar extends React.Component {
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
                                   {scene.name}
+                                  {scene.type === 'builtin' && (
+                                    <span
+                                      style={{
+                                        marginLeft: '8px',
+                                        fontSize: '0.7em',
+                                        backgroundColor: 'rgba(96, 165, 250, 0.3)',
+                                        padding: '2px 6px',
+                                        borderRadius: '3px',
+                                        fontWeight: 'normal',
+                                      }}
+                                    >
+                                      BUILT-IN
+                                    </span>
+                                  )}
                                 </div>
                                 <div style={{ fontSize: '0.85em', color: '#A0CCFF' }}>
-                                  {scene.numberBricks} bricks •{' '}
-                                  {new Date(scene.savedAt).toLocaleString()}
+                                  {scene.numberBricks} bricks
+                                  {scene.type === 'builtin' && scene.id && ` • Set: ${scene.id}`}
+                                  {scene.type !== 'builtin' &&
+                                    ` • ${new Date(scene.savedAt).toLocaleString()}`}
                                 </div>
                               </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  this.handleDelete(scene.filename);
-                                }}
-                                style={{
-                                  padding: '4px 8px',
-                                  backgroundColor: '#663333',
-                                  color: '#FFF',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  marginLeft: '10px',
-                                }}
-                              >
-                                Delete
-                              </button>
+                              {scene.type !== 'builtin' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    this.handleDelete(scene.filename);
+                                  }}
+                                  style={{
+                                    padding: '4px 8px',
+                                    backgroundColor: '#663333',
+                                    color: '#FFF',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    marginLeft: '10px',
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                              )}
                             </div>
                           ))}
                         </div>

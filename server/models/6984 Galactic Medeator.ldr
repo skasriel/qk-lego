@@ -1,0 +1,17 @@
+0 6984 Galactic Medeator
+0 Name: 6984_Galactic_Medeator.ldr
+0 Author: LEGO
+0 bassfoundation@yahoo.com
+0 !COLOUR SandBlue CODE 64 VALUE #88A2B5 EDGE 0 ALPHA 255
+0 !COLOUR Chrome CODE 65 VALUE #A1A29B EDGE 0 ALPHA 255
+0 !COLOUR Silver CODE 66 VALUE #C7C7C7 EDGE 0 ALPHA 255
+0 !COLOUR Gold CODE 67 VALUE #BBBD39 EDGE 0 ALPHA 255
+0 ROTATION CENTER 0 0 0 1 "Custom" 
+0 ROTATION CONFIG 0 0
+1 0 0 0 -220 1 0 0 0 1 0 0 0 1 6984_section1.ldr
+1 0 0 0 0 1 0 0 0 1 0 0 0 1 6984_section2.ldr
+1 0 0 0 240 1 0 0 0 1 0 0 0 1 6984_section3.ldr
+1 0 0 -48 340 1 0 0 0 1 0 0 0 1 6984_rover.ldr
+1 0 140 0 420 1 0 0 0 1 0 0 0 1 SpacePoliceII_cell_fig.ldr
+1 0 -140 0 420 1 0 0 0 1 0 0 0 1 SpacePoliceII_cell.ldr
+0

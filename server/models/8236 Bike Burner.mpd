@@ -1,0 +1,117 @@
+0 FILE bike.ldr
+0 8236 Bike Burner
+0 Name: bike.ldr
+0 Author: Sabo Sergiu Vlad
+0 Official Model
+0 ROTATION CENTER 0 0 0 1 "Custom" 
+0 ROTATION CONFIG 0 0
+1 2 -123 0 24 0 -1 0 -1 0 0 0 0 -1 32348.dat
+1 0 -102.999 0 24 -1 0 0 0 1 0 0 0 -1 4519.dat
+1 2 -102.999 0 24 -1 0 0 0 1 0 0 0 -1 32291.dat
+1 2 -83 0 24 0 -1 0 -1 0 0 0 0 -1 32348.dat
+1 15 -103 20 44.002 0 -1 0 0 0 -1 1 0 0 32138.dat
+1 2 -103 0 64 1 0 0 0 1 0 0 0 1 32291.dat
+1 0 -103 0 64 1 0 0 0 1 0 0 0 1 32073.dat
+1 2 -83 0 64 0 -1 0 0 0 -1 1 0 0 32140.dat
+1 2 -123 0 64 0 -1 0 0 0 -1 1 0 0 32140.dat
+1 0 -103 -60 73.999 -1 0 0 0 0 -1 0 -1 0 32138.dat
+1 7 -133 -40 64 -1 0 0 0 0 -1 0 -1 0 3749.dat
+1 7 -72.999 -40 63.999 1 0 0 0 0 -1 0 1 0 3749.dat
+1 0 -72.999 -20 63.999 1 0 0 0 0 -1 0 1 0 2780.dat
+1 0 -133 -20 64 1 0 0 0 0 -1 0 1 0 2780.dat
+1 7 -68.001 0 64.001 0 1 0 0 0 -1 -1 0 0 32249.dat
+1 7 -137.997 0 64.001 0 1 0 0 0 -1 -1 0 0 32249.dat
+1 2 -58.001 0 64.002 0 -1 0 -1 0 0 0 0 -1 32250.dat
+1 2 -148 0 64 0 -1 0 -1 0 0 0 0 -1 32250.dat
+1 0 -103 0 44.002 -1 0 0 0 1 0 0 0 -1 3707.dat
+1 0 -133.001 0 -35.999 -1 0 0 0 1 0 0 0 -1 2780.dat
+1 0 -73 0 -36.001 -1 0 0 0 1 0 0 0 -1 2780.dat
+1 0 -132.999 -32 -59.998 -1 0 0 0 1 0 0 0 -1 2780.dat
+1 0 -73 -32 -60 -1 0 0 0 1 0 0 0 -1 2780.dat
+1 0 -63.003 8 -80 0 -1 0 0.803857 0 -0.594823 0.594823 0 0.803857 32175.dat
+1 0 -143.002 8 -80.001 0 1 0 -0.803857 0 -0.594823 -0.594823 0 0.803857 32175.dat
+1 0 -103.002 -48 -71.998 1 0 0 0 0.803857 -0.594823 0 0.594823 0.803857 4519.dat
+1 0 -93 -64 -84.002 0 -1 0 -0.594823 0 -0.803857 0.803857 0 -0.594823 32068.dat
+1 7 -83.001 -4 -64.001 0 0 -1 -0.594823 0.803857 0 0.803857 0.594823 0 32039.dat
+1 7 -123 -4 -64 0 0 1 0.594823 0.803857 0 -0.803857 0.594823 0 32039.dat
+1 0 -102.999 -4 -64.001 -1 0 0 0 0.594823 -0.803857 0 -0.803857 -0.594823 4519.dat
+1 7 -102.999 -4 -64.001 0 0 -1 0.803857 0.594823 0 0.594823 -0.803857 0 3713.dat
+1 256 -122.998 -80 -129.002 0 0 -1 -0.594823 0.803857 0 0.803857 0.594823 0 12bkc.ldr
+1 15 -29.999 0 43.997 0 0 -1 0 1 0 1 0 0 2994.dat
+1 15 -176.002 0 43.998 0 0 1 0 1 0 -1 0 0 2994.dat
+1 256 -176.002 0 43.998 0 0 1 0 1 0 -1 0 0 6578.dat
+1 256 -29.999 0 43.997 0 0 1 0 1 0 -1 0 0 6578.dat
+0
+0 FILE 12bkc.ldr
+0 Untitled
+0 Name: 12bkc.ldr
+0 Author: MLCad
+0 Unofficial Model
+0 ROTATION CENTER 0 0 0 1 "Custom" 
+0 ROTATION CONFIG 0 0
+1 0 47 0 -20 0 0 -1 0 1 0 1 0 0 3705.dat
+1 7 47 0 -20 0 0 -1 0 1 0 1 0 0 6536.dat
+1 2 47 0 -35 0 0 -1 -1 0 0 0 1 0 6632.dat
+1 2 47 0 -5 0 0 -1 -1 0 0 0 1 0 6632.dat
+1 7 47 0 -70 1 0 0 0 -1 0 0 0 -1 32015.dat
+1 7 47 0 30 -1 0 0 0 -1 0 0 0 1 32015.dat
+1 7 7 0 -20 0 0 1 0 1 0 -1 0 0 6536.dat
+1 0 7 0 -20 0 0 1 0 1 0 -1 0 0 3705.dat
+1 0 -13 0 -50 0 0 -1 0 1 0 1 0 0 32039.dat
+1 0 -13 0 10 0 0 -1 0 1 0 1 0 0 32039.dat
+1 0 27 20 -20 1 0 0 0 1 0 0 0 1 6558.dat
+1 0 -63 0 10 1 0 0 0 1 0 0 0 1 3706.dat
+1 0 -63 0 -50 1 0 0 0 1 0 0 0 1 3706.dat
+1 0 -33 0 -30 1 0 0 0 1 0 0 0 1 32039.dat
+1 0 -33 0 -10 -1 0 0 0 1 0 0 0 -1 32039.dat
+1 0 -33 0 -20 0 0 1 0 1 0 -1 0 0 32062.dat
+1 7 -113 0 -50 0 0 1 0 1 0 -1 0 0 44.dat
+1 7 -113 0 10 0 0 1 0 -1 0 1 0 0 44.dat
+1 2 -45 0 -50 -1 0 0 0 -1 0 0 0 1 01fd.dat
+1 7 -45 0 10 -1 0 0 0 -1 0 0 0 1 01fd.dat
+1 0 -133 0 -20 0 0 -1 0 -1 0 -1 0 0 3705.dat
+1 7 -133 0 -10 1 0 0 0 -1 0 0 0 -1 3713.dat
+1 15 -133 0 -20 1 0 0 0 -1 0 0 0 -1 2994.dat
+1 0 -133 0 -20 1 0 0 0 -1 0 0 0 -1 6578.dat
+0
+0 FILE 01fd.dat
+0 Technic Ribbed Hose 120LDU Long (open file for usage guide)
+0 Name: 78.dat
+0 Author: Fredrik Glöckner
+0 !LDRAW_ORG Part UPDATE 2000-02
+0 !LICENSE Not redistributable : see NonCAreadme.txt
+0 !HELP If you have a Ribbed Technic Hose you want to model in LDraw, you may
+0 !HELP want to start by counting the number of "notches" on it.  Each subpart
+0 !HELP "79.DAT" and "80.DAT" is used to model one single notch, the former
+0 !HELP one at the end and the latter an arbitrary one in the middle.  The
+0 !HELP distance between each notch should be 6.2LDU, and each subpart has the
+0 !HELP notch centered in the origin.  For the end segments "79.DAT", the
+0 !HELP distance from the origin to the very end of the hose is 2.5LDU.  This
+0 !HELP way, the example hose below has a total length of 116.6LDU: Each of
+0 !HELP the 17 segments have a length of 6.2LDU, while the end segments have a
+0 !HELP length of 3.1LDU+2.5LDU each.
+0 !HELP Note that the actual length of each hose segment is slightly longer
+0 !HELP than 6.2LDU.  This is chosen so that the segments overlap if used to
+0 !HELP model a curved hose.
+0 !HISTORY 2000-09-30 [PTadmin] Official Update 2000-02
+0 !HISTORY 2007-12-30 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 ROTATION CENTER 0 0 0 1 "Custom" 
+0 ROTATION CONFIG 0 0
+1 2 55.8 0 0 0 1 0 1 0 0 0 0 -1 79.dat
+1 2 49.6 0 0 0 -1 0 1 0 0 0 0 1 80.dat
+1 2 43.4 0 0 0 -1 0 1 0 0 0 0 1 80.dat
+1 2 37.2 0 0 0 -1 0 1 0 0 0 0 1 80.dat
+1 2 31 0 0 0 -1 0 1 0 0 0 0 1 80.dat
+1 2 24.8 0 0 0 -1 0 1 0 0 0 0 1 80.dat
+1 2 18.6 0 0 0 -1 0 1 0 0 0 0 1 80.dat
+1 2 12.4 0 0 0 -1 0 1 0 0 0 0 1 80.dat
+1 2 6.2 0 0 0 -1 0 1 0 0 0 0 1 80.dat
+1 2 0 0 0 0 -1 0 1 0 0 0 0 1 80.dat
+0 
+0 NOFILE
+0 NOFILE
+0 NOFILE
+0 
+0
+0

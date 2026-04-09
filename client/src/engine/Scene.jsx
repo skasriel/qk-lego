@@ -4,9 +4,9 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 
 import { BOUNDINGBOX_OFFSET } from './Brick';
 import { BasicBrick } from './BasicBrick';
-import { MPDBrick } from './MPDBrick';
-import { GLBBrick } from './GLBBrick';
-import { OBJBrick } from './OBJBrick';
+// import { MPDBrick } from './MPDBrick';
+//import { GLBBrick } from './GLBBrick';
+//import { OBJBrick } from './OBJBrick';
 
 import Message from '../components/Message';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -77,18 +77,19 @@ class Scene extends React.Component {
     this._initCore();
     this._initEnv();
 
-    let promise1 = MPDBrick.loadAllTemplates(this.scene).catch((e) =>
-      console.warn('MPD templates failed:', e)
-    );
-    let promise2 = GLBBrick.loadAllTemplates(this.scene).catch((e) =>
-      console.warn('GLB templates failed:', e)
-    );
-    let promise3 = OBJBrick.loadAllTemplates(this.scene).catch((e) =>
-      console.warn('OBJ templates failed:', e)
-    );
-    Promise.all([promise1, promise2, promise3]).then((result) => {
-      this._init();
-    });
+    // let promise1 = MPDBrick.loadAllTemplates(this.scene).catch((e) =>
+    //   console.warn('MPD templates failed:', e)
+    // );
+    // QK-DEAD: GLB and OBJ template loading removed - these classes are quarantined
+    // let promise2 = GLBBrick.loadAllTemplates(this.scene).catch((e) =>
+    //   console.warn('GLB templates failed:', e)
+    // );
+    // let promise3 = OBJBrick.loadAllTemplates(this.scene).catch((e) =>
+    //   console.warn('OBJ templates failed:', e)
+    // );
+    // Promise.all([promise1]).then((result) => {
+    //   this._init();
+    // });
   }
 
   // Handles messages from server - typically, because another client made changes to the scene
@@ -971,18 +972,18 @@ class Scene extends React.Component {
   createAndAddBrickFromObject(state) {
     let brick;
     switch (state.brickType) {
-      case MPDBrick.BrickType:
-        brick = MPDBrick.load(state);
-        break;
+      //case MPDBrick.BrickType:
+      //  brick = MPDBrick.load(state);
+      //  break;
       case BasicBrick.BrickType:
         brick = BasicBrick.load(state);
         break;
-      case GLBBrick.BrickType:
-        brick = GLBBrick.load(state);
-        break;
-      case OBJBrick.BrickType:
-        brick = OBJBrick.load(state);
-        break;
+      //case GLBBrick.BrickType:
+      //  brick = GLBBrick.load(state);
+      //  break;
+      //case OBJBrick.BrickType:
+      //  brick = OBJBrick.load(state);
+      //  break;
       default:
         console.log('Unknown brick type: ' + JSON.stringify(state));
         return null;

@@ -25,6 +25,8 @@ export class Brick {
 
   /* Create a JSON representation of this brick for saving to server / localStorage */
   save() {
+    // Ensure matrix is up to date
+    this.model.updateMatrixWorld(true);
     let state = {
       uuid: this._uuid,
       position: this.model.position,
@@ -32,6 +34,7 @@ export class Brick {
       colorType: this.colorType,
       brickID: this._brickID,
       angle: this._angle,
+      rotationMatrix: this.model.matrixWorld.elements.slice(0, 9), // Store 3x3 rotation
     };
     return state;
   }

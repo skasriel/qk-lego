@@ -3,9 +3,9 @@ import { RebrickablePartsFlat } from './RebrickableData';
 // see https://www.bricklink.com/catalogList.asp?catType=P&catString=130
 export class BrickCollections {
   static basicBrick = 'basic';
-  static mpdBrick = 'mpd';
-  static glbBrick = 'glb';
-  static objBrick = 'obj';
+  //static mpdBrick = 'mpd';
+  // static glbBrick = 'glb';
+  // static objBrick = 'obj';
   static collections = {
     Bricks: [
       { type: BrickCollections.basicBrick, id: 3005, width: 1, height: 3, depth: 1 },
