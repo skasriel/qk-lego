@@ -29,16 +29,12 @@ function getCursor(mode) {
   switch (mode) {
     case Modes.Delete:
       return 'no-drop';
-      break;
     case Modes.Clone:
       return 'copy';
-      break;
     case Modes.Move:
       return 'move';
-      break;
     default:
       return 'default';
-      break;
   }
 }
 

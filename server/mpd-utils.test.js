@@ -51,8 +51,8 @@ describe('MPD Format Tests', () => {
     
     expect(bricks).toHaveLength(2);
     expect(bricks[0].brickID).toBe('3001');
-    expect(bricks[0].position.x).toBeCloseTo(40, 0); // 100 / 2.5
-    expect(bricks[0].position.y).toBeCloseTo(20, 0); // -(-50) / 2.5
+    expect(bricks[0].position.x).toBeCloseTo(500, 0); // 100 * 5
+    expect(bricks[0].position.y).toBeCloseTo(208.125, 0); // -(-50) * 4.1625
     expect(bricks[1].brickID).toBe('3002');
   });
 

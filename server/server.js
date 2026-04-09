@@ -18,7 +18,38 @@ app.use('/ldraw', (req, res, next) => {
   // Fix 'models/parts/' path issue from LDrawLoader  
   req.url = req.url.replace(/\/models\/parts\//g, '/parts/');
   next();
-}, express.static(path.join(__dirname, 'ldraw')));
+}, express.static(path.join(__dirname, 'ldraw')), (req, res, next) => {
+  // Fallback: try alternative locations for LDraw files
+  // LDraw files can be in /parts/, /p/, /parts/s/, /p/48/, etc.
+  const fs = require('fs');
+  const originalUrl = req.url;
+  
+  const tryPaths = [];
+  
+  if (originalUrl.startsWith('/parts/')) {
+    const filename = originalUrl.substring('/parts/'.length);
+    // Try /p/ (primitives)
+    tryPaths.push(`/p/${filename}`);
+    // Try /parts/s/ (subfiles)
+    tryPaths.push(`/parts/s/${filename}`);
+    // If in a subdirectory like /parts/s/, also try /p/
+    if (filename.includes('/')) {
+      const basename = filename.split('/').pop();
+      tryPaths.push(`/p/${basename}`);
+      tryPaths.push(`/parts/s/${basename}`);
+    }
+  }
+  
+  for (const tryPath of tryPaths) {
+    const fullPath = path.join(__dirname, 'ldraw', tryPath);
+    if (fs.existsSync(fullPath)) {
+      console.log(`LDraw fallback: ${originalUrl} -> ${tryPath}`);
+      return res.sendFile(fullPath);
+    }
+  }
+  
+  next();
+});
 
 // Serve the React client build
 app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
@@ -385,53 +416,59 @@ wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(message) { // received a new message from a client
     console.log(`received: ${message}`);
     // TODO: log all received actions persistently for debug or undo / replay purposes
-    const action = JSON.parse(message);
-    const worldHash = getWorldSignature();
-    if (action.worldHash != worldHash) {
-      console.log(`Error: client is out-of-sync: their hash ${action.worldHash} != ours ${worldHash} instructing them to reload!`);
-      let reload = persistWorld();
-      reload.worldHash = worldHash;
-      reload.type = Action.Reload;
-      let message = JSON.stringify(reload);
-      ws.send(message);
-      return;
-    }
-    switch (action.type) {
-      case Action.Create:
-        let brick = createAndAddBrickFromObject(action.brick);
-        saveWorldToDisk();
-        console.log("Added new brick because client asked us to "+JSON.stringify(brick));
-        break;
-      case Action.Delete:
-        const brickToDelete = action.uuid;
-        const numBricks = bricks.length;
-        bricks = bricks.filter(function(brick, index, arr){ return brick.uuid != brickToDelete;});
-        saveWorldToDisk();
-        console.log(`Deleted brick ${JSON.stringify(brickToDelete)} because client asked us to. # bricks was ${numBricks} and now ${bricks.length}`);
-        break;
-      case Action.Move:
-        const brickID = action.brick.uuid;
-        let brickToMove = bricks.find(brick => {return brick.uuid==brickID});
-        console.log(`Moved brick ${brickID} from ${_toStringVector3D(brickToMove.position)} to ${_toStringVector3D(action.brick.position)}`);
-        brickToMove.position.x = action.brick.position.x;
-        brickToMove.position.y = action.brick.position.y;
-        brickToMove.position.z = action.brick.position.z;
-        break;
-      case Action.Reset:
-        bricks = [];
-        saveWorldToDisk();
-        console.log("Reset scene - cleared all bricks");
-        break;
-      default:
-        console.log("Action type not supported yet: "+action.type);
-        break;
-    }
-    wss.clients.forEach(function each(client) { // Broadcast (except to sender)
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        console.log(`Send message to client ${client}`);
-        client.send(message);
+    try {
+      const action = JSON.parse(message);
+      const worldHash = getWorldSignature();
+      if (action.worldHash != worldHash) {
+        console.log(`Error: client is out-of-sync: their hash ${action.worldHash} != ours ${worldHash} instructing them to reload!`);
+        let reload = persistWorld();
+        reload.worldHash = worldHash;
+        reload.type = Action.Reload;
+        let message = JSON.stringify(reload);
+        ws.send(message);
+        return;
       }
-    });
+      switch (action.type) {
+        case Action.Create:
+          let brick = createAndAddBrickFromObject(action.brick);
+          saveWorldToDisk();
+          console.log("Added new brick because client asked us to "+JSON.stringify(brick));
+          break;
+        case Action.Delete:
+          const brickToDelete = action.uuid;
+          const numBricks = bricks.length;
+          bricks = bricks.filter(function(brick, index, arr){ return brick.uuid != brickToDelete;});
+          saveWorldToDisk();
+          console.log(`Deleted brick ${JSON.stringify(brickToDelete)} because client asked us to. # bricks was ${numBricks} and now ${bricks.length}`);
+          break;
+        case Action.Move:
+          const brickID = action.brick.uuid;
+          let brickToMove = bricks.find(brick => {return brick.uuid==brickID});
+          console.log(`Moved brick ${brickID} from ${_toStringVector3D(brickToMove.position)} to ${_toStringVector3D(action.brick.position)}`);
+          brickToMove.position.x = action.brick.position.x;
+          brickToMove.position.y = action.brick.position.y;
+          brickToMove.position.z = action.brick.position.z;
+          break;
+        case Action.Reset:
+          bricks = [];
+          saveWorldToDisk();
+          console.log("Reset scene - cleared all bricks");
+          break;
+        default:
+          console.log("Action type not supported yet: "+action.type);
+          break;
+      }
+      wss.clients.forEach(function each(client) { // Broadcast (except to sender)
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          console.log(`Send message to client ${client}`);
+          client.send(message);
+        }
+      });
+    } catch (err) {
+      console.error('Error handling WebSocket message:', err);
+      console.error('Message was:', message);
+      // Don't crash the server, just log and continue
+    }
   });
   //ws.send('something');
 });

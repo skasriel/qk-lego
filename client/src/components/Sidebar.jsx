@@ -180,12 +180,12 @@ class Sidebar extends React.Component {
       }
     } catch (err) {
       console.error('Failed to save:', err);
-      alert('Failed to save scene');
+      window.alert('Failed to save scene');
     }
   };
 
   handleLoad = async (sceneName) => {
-    if (!confirm(`Load scene "${sceneName}"? This will replace the current scene.`)) return;
+    if (!window.confirm(`Load scene "${sceneName}"? This will replace the current scene.`)) return;
 
     try {
       const res = await fetch(`/api/scenes/load/${encodeURIComponent(sceneName)}`);
@@ -195,12 +195,12 @@ class Sidebar extends React.Component {
       }
     } catch (err) {
       console.error('Failed to load:', err);
-      alert('Failed to load scene');
+      window.alert('Failed to load scene');
     }
   };
 
   handleReset = async () => {
-    if (confirm('Reset scene? This will delete all bricks and cannot be undone.')) {
+    if (window.confirm('Reset scene? This will delete all bricks and cannot be undone.')) {
       try {
         // Send reset to server via WebSocket (through the Scene component's mechanism)
         // For now, just reload which will fetch the empty scene

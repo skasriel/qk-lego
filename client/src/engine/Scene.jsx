@@ -4,9 +4,6 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 
 import { BOUNDINGBOX_OFFSET } from './Brick';
 import { BasicBrick } from './BasicBrick';
-// import { MPDBrick } from './MPDBrick';
-//import { GLBBrick } from './GLBBrick';
-//import { OBJBrick } from './OBJBrick';
 
 import Message from '../components/Message';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -54,9 +51,6 @@ styles.shifted = {
   transform: 'translate3d(0, 0, 0)',
 };
 
-// TODO: test this for speed: 				geometry = new THREE.BufferGeometry().fromGeometry( geometry );
-// TODO: test vertex color: 					new THREE.MeshLambertMaterial( { map: texture, vertexColors: true, side: THREE.DoubleSide } )
-
 class Scene extends React.Component {
   state = {
     drag: false,
@@ -72,24 +66,11 @@ class Scene extends React.Component {
     this._needsRendering = true;
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     this._initWS();
     this._initCore();
     this._initEnv();
-
-    // let promise1 = MPDBrick.loadAllTemplates(this.scene).catch((e) =>
-    //   console.warn('MPD templates failed:', e)
-    // );
-    // QK-DEAD: GLB and OBJ template loading removed - these classes are quarantined
-    // let promise2 = GLBBrick.loadAllTemplates(this.scene).catch((e) =>
-    //   console.warn('GLB templates failed:', e)
-    // );
-    // let promise3 = OBJBrick.loadAllTemplates(this.scene).catch((e) =>
-    //   console.warn('OBJ templates failed:', e)
-    // );
-    // Promise.all([promise1]).then((result) => {
-    //   this._init();
-    // });
+    await this._init();
   }
 
   // Handles messages from server - typically, because another client made changes to the scene
@@ -135,18 +116,8 @@ class Scene extends React.Component {
         console.log('Action type not supported yet: ' + action.type);
         break;
     }
+    console.log('_handleWSMessage: ' + JSON.stringify(action));
   }
-  /*heartbeat() {
-    clearTimeout(this.pingTimeout);
-
-    // Use `WebSocket#terminate()`, which immediately destroys the connection,
-    // instead of `WebSocket#close()`, which waits for the close timer.
-    // Delay should be equal to the interval at which your server
-    // sends out pings plus a conservative assumption of the latency.
-    this.pingTimeout = setTimeout(() => {
-      this.ws.close();
-    }, 1000 + 1000);
-  }*/
 
   _initWS() {
     let wsURL =
@@ -157,56 +128,58 @@ class Scene extends React.Component {
     this.ws = new ReconnectingWebSocket(wsURL);
 
     this.ws.onopen = () => {
-      // on connecting, do nothing but log it to the console
       console.log('connected to server via web socket');
-      //this.heartbeat();
     };
-    //this.ws.onping = this.heartbeat;
 
     this.ws.onmessage = (message) => this._handleWSMessage(this, message); // on receiving a message, add it to the list of messages
-
-    /*this.ws.onclose = () => { // automatically try to reconnect on connection loss
-      console.log('disconnected')
-      clearTimeout(this.pingTimeout);
-      this.setState({
-        ws: new ReconnectingWebSocket(wsURL),
-      });
-    }*/
   }
+
   _sendActionToWebSocket(action) {
     console.log('Sending action to server: '); //+JSON.stringify(action));
     this.ws.send(JSON.stringify(action));
   }
 
-  _init() {
+  async _init() {
     this._setEventListeners();
     this._start();
-    this._loadState();
+    await this._loadState();
     this._needsRendering = true;
+    // Create initial rollover brick
+    await this._getRollOverBrick();
   }
 
-  componentDidUpdate(prevProps) {
+  async componentDidUpdate(prevProps) {
     const { mode, brickColor, colorType, brickID } = this.props;
-    let rollOverBrick = this._getRollOverBrick();
 
-    if (mode === Modes.Build) {
-      rollOverBrick.visible = true;
-    } else {
-      rollOverBrick.visible = false;
+    if (this.rollOverBrick) {
+      const rollOverModel = this.rollOverBrick.getModel();
+      if (mode === Modes.Build) {
+        rollOverModel.visible = true;
+      } else {
+        rollOverModel.visible = false;
+      }
     }
+
     if (mode !== prevProps.mode) {
       this.modeSetup(prevProps.mode);
     }
 
     if (prevProps.brickID !== brickID || prevProps.brickColor != brickColor) {
       // selected a new brick type or color!
-      this.scene.remove(this.rollOverBrick.getModel());
-      this.ghostScene.remove(this.rollOverGhostBlock);
-      this.rollOverBrick = BasicBrick.createBrick(brickID.id, brickColor, colorType);
+      if (this.rollOverBrick) {
+        this.scene.remove(this.rollOverBrick.getModel());
+        this.ghostScene.remove(this.rollOverGhostBlock);
+        this.rollOverBrick = null;
+        this.rollOverGhostBlock = null;
+        this._rollOverBrickPromise = null;
+      }
+      // Create brick asynchronously from DAT file
+      const brick = await BasicBrick.createFromDAT(brickID, brickColor, colorType);
+      this.rollOverBrick = brick;
       this.rollOverBrick.addToScene(this.scene, this.ghostScene);
       this.rollOverGhostBlock = this.rollOverBrick.ghostBlock;
+      this._needsRendering = true;
     }
-
     this._needsRendering = true;
   }
 
@@ -223,8 +196,6 @@ class Scene extends React.Component {
     renderer.setClearColor(0xffffff);
     renderer.setPixelRatio(1);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    //renderer.gammaInput = true;
-    //renderer.gammaOutput = true;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     if (USE_SHADOWS) {
@@ -389,27 +360,36 @@ class Scene extends React.Component {
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
+
+    console.log('initEnv');
   }
 
-  _getRollOverBrick() {
+  async _getRollOverBrick() {
     // returns the rollover brick and its ghost block
+    // Prevent race condition by storing promise
+    if (this._rollOverBrickPromise) {
+      await this._rollOverBrickPromise;
+      return { brick: this.rollOverBrick, block: this.rollOverGhostBlock };
+    }
+    
     if (!this.rollOverBrick) {
       const { brickID, brickColor, colorType } = this.props;
-      const brick = BasicBrick.createBrick(brickID.id, brickColor, colorType);
-      /*BrickCollections.defaultBrick.id,
-        ColorCollections.getDefaultColor(),
-        ColorCollections.getDefaultColorType());*/
-      brick.addToScene(this.scene, this.ghostScene);
-      this.rollOverBrick = brick;
-      this.rollOverGhostBlock = brick.ghostBlock;
+      this._rollOverBrickPromise = (async () => {
+        const brick = await BasicBrick.createFromDAT(brickID, brickColor, colorType);
+        brick.addToScene(this.scene, this.ghostScene);
+        this.rollOverBrick = brick;
+        this.rollOverGhostBlock = brick.ghostBlock;
+      })();
+      await this._rollOverBrickPromise;
+      this._rollOverBrickPromise = null;
     }
     return { brick: this.rollOverBrick, block: this.rollOverGhostBlock };
   }
 
   _setEventListeners() {
-    document.addEventListener('mousemove', (event) => this._onMouseMove(event, this), false);
+    document.addEventListener('mousemove', (event) => this._onMouseMove(event), false);
     document.addEventListener('mousedown', (event) => this._onMouseDown(event), false);
-    document.addEventListener('mouseup', (event) => this._onMouseUp(event, this), false);
+    document.addEventListener('mouseup', (event) => this._onMouseUp(event), false);
     document.addEventListener('keydown', (event) => this._onKeyDown(event, this), false);
     document.addEventListener('keyup', (event) => this._onKeyUp(event, this), false);
     window.addEventListener('resize', (event) => this._onWindowResize(event, this), false);
@@ -453,8 +433,8 @@ class Scene extends React.Component {
     return this.props.mode === Modes.Build;
   }
 
-  _createBrick(intersect) {
-    const { brick: rollOverBrick, block: rollOverGhostBlock } = this._getRollOverBrick();
+  async _createBrick(intersect) {
+    const { brick: rollOverBrick, block: rollOverGhostBlock } = await this._getRollOverBrick();
 
     // For accurate collision detection with complex shapes (L-bricks, etc.),
     // we need to check actual geometry intersection, not just bounding boxes.
@@ -511,14 +491,17 @@ class Scene extends React.Component {
         return;
       }
     }
+
     let position = rollOverGhostBlock.position.clone();
     position.y += BOUNDINGBOX_OFFSET;
 
-    let brick = BasicBrick.createBrick(
+    // Create brick asynchronously from DAT file
+    const brick = await BasicBrick.createFromDAT(
       rollOverBrick._brickID,
       rollOverBrick.color,
       rollOverBrick.colorType
     );
+
     if (rollOverBrick._angle && rollOverBrick._angle != 0) {
       brick.rotateY(rollOverBrick._angle);
     }
@@ -559,9 +542,22 @@ class Scene extends React.Component {
   /**
    * Mouse Handlers
    */
-  _onMouseMove(event) {
+  async _onMouseMove(event) {
+    // Ignore mouse moves not on canvas or in UI areas
+    if (event.target.localName !== 'canvas') return;
+    if (event.clientY > window.innerHeight - 180) return;
+    
     const { mode } = this.props; // edit vs draw
-    const { brick: rollOverBrick, block: rollOverGhostBlock } = this._getRollOverBrick();
+
+    // Ensure rollover brick exists
+    if (!this.rollOverBrick) {
+      await this._getRollOverBrick();
+    }
+
+    const rollOverBrick = this.rollOverBrick;
+    const rollOverGhostBlock = this.rollOverGhostBlock;
+
+    if (!rollOverBrick) return;
 
     event.preventDefault();
 
@@ -592,7 +588,11 @@ class Scene extends React.Component {
     const bottomOffset = rollOverBrickMesh.position.y - modelBB.min.y;
 
     let intersectObject = intersect.object;
-    let position = new THREE.Vector3().copy(intersect.point).add(intersect.face.normal);
+    let position = new THREE.Vector3().copy(intersect.point);
+    // Add face normal if available (for placing on top of surfaces)
+    if (intersect.face && intersect.face.normal) {
+      position.add(intersect.face.normal);
+    }
 
     if (intersectObject === this.plane || intersectObject === this.ghostPlane) {
       // Place brick so its bottom sits on the floor (y=0)
@@ -630,33 +630,19 @@ class Scene extends React.Component {
     position.z = snappedFront + brickDepth / 2 - offsetZ;
 
     rollOverBrick.setPosition(position, true);
-
-    /*if (object == this.plane || object == this.ghostPlane) {
-      const savedY = rollOverBrickMesh.position.y;
-      rollOverBrickMesh.position.y = 600;
-      const savedGhostY = rollOverGhostBlock.position.y;
-      rollOverGhostBlock.position.y = 600;
-      const pointOnPlane = new THREE.Vector3(rollOverBrickMesh.position.x, 0, rollOverBrickMesh.position.z);
-      this.raycaster.set(pointOnPlane, new THREE.Vector3(0, 1, 0));
-      const verticalIntersect = this.raycaster.intersectObject(rollOverGhostBlock, true);
-      console.log(`Raycast from ${this._toStringVector3D(pointOnPlane)} towards ${this._toStringVector3D(rollOverBrickMesh.position)} Intersect = ${JSON.stringify(verticalIntersect)}`);
-      if (verticalIntersect == null || verticalIntersect.length==0) {
-        rollOverBrickMesh.position.y = savedY;
-        rollOverGhostBlock.position.y = savedGhostY;
-      } else {
-        console.log("YAY THERE'S A MATCH");
-        const height = verticalIntersect[0].point.y;
-        rollOverBrickMesh.position.y -= height;
-      }
-      position.copy(rollOverBrickMesh.position);
-      this._setRollOverBrickPosition(position);
-    }*/
-
     this._needsRendering = true;
   }
 
   _onMouseUp(event) {
+    // Ignore clicks not on canvas
     if (event.target.localName !== 'canvas') return;
+    
+    // Ignore clicks in UI areas (brick picker at bottom, etc.)
+    // Brick picker is ~180px tall at bottom
+    if (event.clientY > window.innerHeight - 180) {
+      return;
+    }
+    
     event.preventDefault();
     const { mode } = this.props;
     const { drag } = this.state;
@@ -745,6 +731,10 @@ class Scene extends React.Component {
   }
 
   _onMouseDown(event) {
+    // Ignore clicks not on canvas or in UI areas
+    if (event.target.localName !== 'canvas') return;
+    if (event.clientY > window.innerHeight - 180) return;
+    
     this.setState({
       drag: false,
     });
@@ -776,8 +766,11 @@ class Scene extends React.Component {
     this._needsRendering = true;
   }
 
-  _onKeyDown(event, scene) {
-    let { brick: rollOverBrick } = this._getRollOverBrick();
+  async _onKeyDown(event, scene) {
+    if (!this.rollOverBrick) {
+      await this._getRollOverBrick();
+    }
+    let rollOverBrick = this.rollOverBrick;
     let { mode } = this.props;
 
     if (mode === Modes.Explore) {
@@ -969,79 +962,39 @@ class Scene extends React.Component {
     this.renderer.render(this.scene, this.camera);
   }
 
-  createAndAddBrickFromObject(state) {
-    let brick;
-    switch (state.brickType) {
-      //case MPDBrick.BrickType:
-      //  brick = MPDBrick.load(state);
-      //  break;
-      case BasicBrick.BrickType:
-        brick = BasicBrick.load(state);
-        break;
-      //case GLBBrick.BrickType:
-      //  brick = GLBBrick.load(state);
-      //  break;
-      //case OBJBrick.BrickType:
-      //  brick = OBJBrick.load(state);
-      //  break;
-      default:
-        console.log('Unknown brick type: ' + JSON.stringify(state));
-        return null;
-        break;
-    }
+  async createAndAddBrickFromObject(state) {
+    let brick = await BasicBrick.load(state);
     this._setupNewBrick(brick);
     return brick;
   }
 
-  /*this.callApi()
-    .then(res => this.setState({ response: res.express }))
-    .catch(err => console.log(err));*/
+  async _loadState() {
+    try {
+      const res = await window.fetch('/api/get-scene');
+      const objectsLoaded = await res.json();
 
-  /*callApi = async () => {
-    const response = await fetch('/api/hello');
-    const body = await response.json();
-    if (response.status !== 200) throw Error(body.message);
-    console.log("Body = "+JSON.stringify(body));
-    return body;
-  };*/
+      console.log(`Received World from server`);
+      let version = objectsLoaded.version;
+      if (version != FILE_VERSION_CURRENT) {
+        console.log("Wrong file version, can't load: " + version);
+        return;
+      }
+      let array = objectsLoaded.world;
+      console.log(`Loading ${array.length} bricks`);
 
-  _loadState() {
-    //try {
-    window
-      .fetch('/api/get-scene')
-      .then((res) => res.json())
-      .then(
-        (objectsLoaded) => {
-          //let json = window.localStorage.getItem('world');
-          //if (!json)
-          //  return;
-          // let objectsLoaded = JSON.parse(result);
-          console.log(`Received World from server: ${objectsLoaded}`);
-          let version = objectsLoaded.version;
-          if (version != FILE_VERSION_CURRENT) {
-            console.log("Wrong file version, can't load: " + version);
-            return;
-          }
-          let array = objectsLoaded.world;
-          console.log(`Loading ${array.length} bricks`);
-          for (let i = 0; i < array.length; i++) {
-            let state = array[i];
-            let brick = this.createAndAddBrickFromObject(state);
-          }
-          this._renderScene();
-          console.log(`Done loading ${array.length} bricks`);
-        },
-        (error) => {
-          console.log(`Unable to load scene from server. Error ${error}`);
-          this.setState({
-            isLoaded: true,
-            error,
-          });
-        }
-      );
-    //} catch (e) {
-    //    console.log("ERROR LOADING STATE: "+e);
-    //}
+      // Load all bricks in parallel
+      const loadPromises = array.map((state) => this.createAndAddBrickFromObject(state));
+      await Promise.all(loadPromises);
+
+      this._renderScene();
+      console.log(`Done loading ${array.length} bricks`);
+    } catch (error) {
+      console.log(`Unable to load scene from server. Error ${error}`);
+      this.setState({
+        isLoaded: true,
+        error,
+      });
+    }
   }
 
   _setupNewBrick(brick) {

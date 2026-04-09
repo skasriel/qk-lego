@@ -1,7 +1,6 @@
 import React from 'react';
 import isEqual from 'lodash/isEqual';
 
-import { BrickCollections } from '../engine/BrickCollections';
 import { RebrickableParts, RebrickableCategories } from '../engine/RebrickableData';
 import { BrickThumbnail } from './BrickThumbnail';
 
@@ -131,7 +130,7 @@ class BrickPicker extends React.Component {
               style={{ textAlign: 'center', cursor: 'pointer' }}
               onClick={() => this._handleChangeBrick(b)}
             >
-              <BrickThumbnail brickId={b.id} selected={selectedID.id == b.id} />
+              <BrickThumbnail brickId={b.id} selected={selectedID == b.id} />
               <div
                 style={{
                   ...styles.label,
@@ -155,26 +154,7 @@ class BrickPicker extends React.Component {
     console.log('_handle ', brickData);
     const { handleSetBrick } = this.props;
 
-    let width = 2,
-      height = 3,
-      depth = 4;
-    const name = brickData.name || '';
-    const match = name.match(/(\d+)\s*x\s*(\d+)(?:\s*x\s*(\d+))?/);
-    if (match) {
-      width = parseInt(match[1]);
-      depth = parseInt(match[2]);
-      height = match[3] ? parseInt(match[3]) * 3 : 3;
-    }
-
-    const brick = {
-      id: brickData.id,
-      type: 'basic',
-      width: width,
-      height: height,
-      depth: depth,
-    };
-
-    handleSetBrick(brick);
+    handleSetBrick(brickData.id);
   }
 
   _togglePicker() {

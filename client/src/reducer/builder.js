@@ -1,13 +1,12 @@
 import * as BuilderActions from '../actions/builder';
 
 import { ColorCollections, Modes } from '../util';
-import { BrickCollections } from '../engine/BrickCollections';
 
 const initialState = {
   mode: Modes.Build,
   color: ColorCollections.getDefaultColor(), //.Solid[0],
   colorType: ColorCollections.getDefaultColorType(),
-  brickID: BrickCollections.defaultBrick, //BrickCollections.collections['Bricks'][0],
+  brickID: '3001', // Default to 2x4 brick
 };
 
 export default function builder(state = initialState, action) {

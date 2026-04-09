@@ -1,6 +1,6 @@
-export const multX = 100.0;
-export const multY = 33.3;
-export const multZ = 100.0;
+export const multX = 100.0; // 1 stud = 100 units (LDraw: 20 LDU per stud, so 20*5=100)
+export const multY = 99.9 / 3; // 1 brick height = 33.3 units (LDraw: 24 LDU per brick, so 24*4.1625=99.9, divided by 3 = 33.3 per plate)
+export const multZ = 100.0; // 1 stud = 100 units
 
 /*
 export const brickTemplateIDs = [

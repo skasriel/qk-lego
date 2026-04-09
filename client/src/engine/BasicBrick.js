@@ -3,10 +3,6 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 import { LDrawLoader } from 'three/examples/jsm/loaders/LDrawLoader.js';
 import { multX, multY, multZ } from '../util';
 import { Brick } from './Brick';
-import { MPDBrick } from './MPDBrick';
-//import { GLBBrick } from './GLBBrick';
-//import { OBJBrick } from './OBJBrick';
-import { BrickCollections } from './BrickCollections';
 
 const USE_SHADOWS = false;
 let staticCounter = 0;
@@ -74,39 +70,36 @@ export class BasicBrick extends Brick {
     });
   }
 
-  constructor(brickID, color, colorType, width, height, depth) {
+  constructor(brickID, color, colorType, width, height, depth, preloadedLDrawModel) {
     const mat = Brick.getMaterial(color, colorType);
 
-    const geo = new THREE.BoxGeometry(width * multX, height * multY, depth * multZ);
+    let model;
+    let geo;
 
-    const geometries = [geo.clone()];
-    const knobSize = 28;
-    const cylinderGeo = new THREE.CylinderGeometry(knobSize, knobSize, knobSize, 12);
-
-    for (let i = 0; i < width; i++) {
-      for (let j = 0; j < depth; j++) {
-        const knob = cylinderGeo.clone();
-        knob.translate(
-          multX * i - ((width - 1) * multX) / 2,
-          (height * multY) / 2 + knobSize / 2,
-          multZ * j - ((depth - 1) * multZ) / 2
-        );
-        geometries.push(knob);
-      }
+    if (!preloadedLDrawModel) {
+      throw new Error(
+        `BasicBrick requires preloaded LDraw model. Use createFromDAT() instead of direct constructor. BrickID: ${brickID}`
+      );
     }
 
-    const combined = BufferGeometryUtils.mergeGeometries(geometries);
-    let model = new THREE.Mesh(combined, mat);
-
-    const edgeGeo = new THREE.EdgesGeometry(model.geometry);
-    const edgeMat = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 1 });
-    const wireframe = new THREE.LineSegments(edgeGeo, edgeMat);
-    model.add(wireframe);
-
-    if (USE_SHADOWS) {
-      model.castShadow = true;
-      model.receiveShadow = true;
-    }
+    // Use the preloaded LDraw model
+    // Create a wrapper group to hold the scaled model
+    // This way the scale/rotation doesn't get saved in the brick's transform
+    const wrapper = new THREE.Group();
+    model = wrapper;
+    
+    const ldrawGroup = preloadedLDrawModel;
+    // Create a simple box for ghost (will be replaced once in scene)
+    geo = new THREE.BoxGeometry(width * multX, height * multY, depth * multZ);
+    // LDraw model is in LDU units (20 LDU = 1 stud, 24 LDU = 1 brick height)
+    // Our app uses: 100 units = 1 stud, 99.9 units = 1 brick height
+    // So scale by 5 for X/Z and 4.1625 for Y
+    const scaleXZ = 5;
+    const scaleY = 99.9 / 24;
+    ldrawGroup.scale.set(scaleXZ, scaleY, scaleXZ);
+    ldrawGroup.rotation.x = Math.PI; // Flip upright (studs on top) - LDraw Y is down in file
+    
+    wrapper.add(ldrawGroup);
 
     super(brickID, color, colorType, model);
 
@@ -122,47 +115,20 @@ export class BasicBrick extends Brick {
     this.rotated = null;
   }
 
-  static createBrick(brickID, color, colorType) {
-    const brickTemplate = BrickCollections.getBrickFromID(brickID);
-    console.log(`Brick.createBrick with ${brickID} => ${JSON.stringify(brickTemplate)}`);
+  static async createFromDAT(brickID, color, colorType) {
+    console.log(`BasicBrick.createFromDAT with ${brickID}`);
 
-    // Try to create with LDraw model first (async)
-    const brick = new BasicBrick(
-      brickID,
-      color,
-      colorType,
-      brickTemplate?.width || 2,
-      brickTemplate?.height || 3,
-      brickTemplate?.depth || 4
-    );
+    // Load LDraw model FIRST, before creating the brick
+    const ldrawModel = await BasicBrick.loadLDrawModel(brickID, color, colorType);
 
-    // Attempt to load LDraw model asynchronously
-    BasicBrick.loadLDrawModel(brickID, color, colorType).then((ldrawModel) => {
-      if (ldrawModel && brick.model) {
-        // Replace the simple geometry with LDraw model
-        const parent = brick.model.parent;
-        console.log(
-          `LDraw model ready for ${brickID}, parent=${parent ? 'yes' : 'null'}, position=${JSON.stringify(brick.model.position)}`
-        );
-        if (parent) {
-          const position = brick.model.position.clone();
-          const rotation = brick.model.rotation.clone();
+    if (!ldrawModel) {
+      throw new Error(
+        `Failed to load LDraw model for ${brickID}. Cannot create brick without DAT data.`
+      );
+    }
 
-          parent.remove(brick.model);
-          // LDraw uses a different coordinate system and scale
-          // LDraw units: 1 LDU = 0.4mm, standard brick = 20x24x20 LDU
-          // Scale LDraw model to match our coordinate system
-          const scaleFactor = 5;
-          ldrawModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
-          ldrawModel.position.copy(position);
-          ldrawModel.rotation.copy(rotation);
-          ldrawModel.rotation.x += Math.PI; // Flip upright (studs on top)
-          ldrawModel.name = brick.model.name;
-          parent.add(ldrawModel);
-          brick.model = ldrawModel;
-        }
-      }
-    });
+    // Create brick with the loaded model
+    const brick = new BasicBrick(brickID, color, colorType, 2, 3, 2, ldrawModel);
 
     return brick;
   }
@@ -180,17 +146,28 @@ export class BasicBrick extends Brick {
     return state;
   }
 
-  static load(state) {
+  static async load(state) {
+    // Load LDraw model first - REQUIRED, no fallback
+    const ldrawModel = await BasicBrick.loadLDrawModel(state.brickID, state.color, state.colorType);
+
+    if (!ldrawModel) {
+      throw new Error(
+        `Failed to load LDraw model for ${state.brickID} during load. Cannot restore brick from saved state.`
+      );
+    }
+
     let brick = new BasicBrick(
       state.brickID,
       state.color,
       state.colorType,
       state.width,
       state.height,
-      state.depth
+      state.depth,
+      ldrawModel
     );
     if (state.uuid) brick._uuid = state.uuid;
     brick.setPosition(state.position, true);
+
     // Apply full rotation matrix if available, otherwise fall back to Y angle
     if (state.rotationMatrix && state.rotationMatrix.length === 9) {
       const m = state.rotationMatrix;
@@ -215,26 +192,12 @@ export class BasicBrick extends Brick {
       );
       brick.model.matrix.setPosition(brick.model.position);
       brick.ghostBlock.matrix.copy(brick.model.matrix);
+      brick.model.updateMatrixWorld(true);
+      brick.ghostBlock.updateMatrixWorld(true);
     } else if (state.angle !== 0) {
       brick.rotateY(state.angle);
     }
-    // Load LDraw model asynchronously (same as createBrick does)
-    BasicBrick.loadLDrawModel(state.brickID, state.color, state.colorType).then((ldrawModel) => {
-      if (ldrawModel && brick.model && brick.model.parent) {
-        const parent = brick.model.parent;
-        const position = brick.model.position.clone();
-        const rotation = brick.model.rotation.clone();
-        parent.remove(brick.model);
-        const scaleFactor = 5;
-        ldrawModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
-        ldrawModel.position.copy(position);
-        ldrawModel.rotation.copy(rotation);
-        ldrawModel.rotation.x += Math.PI;
-        ldrawModel.name = brick.model.name;
-        parent.add(ldrawModel);
-        brick.model = ldrawModel;
-      }
-    });
+
     return brick;
   }
 }

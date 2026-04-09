@@ -60,53 +60,66 @@ function bricksToMPD(bricks, name = 'Untitled') {
   lines.push('');
   
   // Convert each brick to MPD format
-  // Our coordinates: 1 unit = 1mm, Y up
-  // LDraw coordinates: 1 unit = 0.4mm, Y up (after our flip), Z forward
-  // Our origin is at brick center, LDraw origin is at brick bottom
-  bricks.forEach(brick => {
-    const color = brick.color || '#FFFFFF';
-    // Find closest LDraw color by RGB distance
-    let ldrawColor = 0;
-    let minDist = Infinity;
-    for (const [code, rgb] of Object.entries(LDRAW_COLORS)) {
-      const r2 = parseInt(rgb.slice(1, 3), 16);
-      const g2 = parseInt(rgb.slice(3, 5), 16);
-      const b2 = parseInt(rgb.slice(5, 7), 16);
-      const r1 = parseInt(color.slice(1, 3), 16);
-      const g1 = parseInt(color.slice(3, 5), 16);
-      const b1 = parseInt(color.slice(5, 7), 16);
-      const dist = (r1-r2)**2 + (g1-g2)**2 + (b1-b2)**2;
-      if (dist < minDist) {
-        minDist = dist;
-        ldrawColor = parseInt(code);
+  // App coordinates: 1 stud = 100 units X/Z, 1 brick = 99.9 units Y
+  // LDraw coordinates: 1 stud = 20 LDU X/Z, 1 brick = 24 LDU Y
+  // Conversion: app / 5 = LDU for X/Z, app / 4.1625 = LDU for Y
+  const APP_TO_LDU_XZ = 5;
+  const APP_TO_LDU_Y = 99.9 / 24; // 4.1625
+  
+  bricks.forEach((brick, index) => {
+    try {
+      const color = brick.color || '#FFFFFF';
+      // Find closest LDraw color by RGB distance
+      let ldrawColor = 0;
+      let minDist = Infinity;
+      for (const [code, rgb] of Object.entries(LDRAW_COLORS)) {
+        const r2 = parseInt(rgb.slice(1, 3), 16);
+        const g2 = parseInt(rgb.slice(3, 5), 16);
+        const b2 = parseInt(rgb.slice(5, 7), 16);
+        const r1 = parseInt(color.slice(1, 3), 16);
+        const g1 = parseInt(color.slice(3, 5), 16);
+        const b1 = parseInt(color.slice(5, 7), 16);
+        const dist = (r1-r2)**2 + (g1-g2)**2 + (b1-b2)**2;
+        if (dist < minDist) {
+          minDist = dist;
+          ldrawColor = parseInt(code);
+        }
       }
-    }
-    
-    // Position: convert from our units (1 unit = 1mm) to LDraw units (1 LDU = 0.4mm)
-    // So multiply by 2.5
-    const x = brick.position.x * 2.5;
-    const y = -brick.position.y * 2.5; // Flip Y (our Y up, LDraw Y down in file)
-    const z = brick.position.z * 2.5;
-    
-    // Rotation matrix - use stored matrix if available, otherwise identity
-    let m_a = 1, m_b = 0, m_c = 0, m_d = 0, m_e = 1, m_f = 0, m_g = 0, m_h = 0, m_i = 1;
-    if (brick.rotationMatrix && brick.rotationMatrix.length === 9) {
-      [m_a, m_b, m_c, m_d, m_e, m_f, m_g, m_h, m_i] = brick.rotationMatrix;
-    } else if (brick.angle) {
-      // Fallback to Y rotation only
-      const cos = Math.cos(brick.angle);
-      const sin = Math.sin(brick.angle);
-      m_a = cos; m_c = sin;
-      m_g = -sin; m_i = cos;
-    }
-    
-    // Part filename - add .dat extension if not present
-    let partFile = brick.brickID;
-    if (!partFile.endsWith('.dat')) {
-      partFile += '.dat';
-    }
+      
+      // Position: convert from app units to LDraw units
+      // App: 100 units = 1 stud, LDraw: 20 LDU = 1 stud
+      // So: LDU = app / 5
+      const x = (brick.position?.x || 0) / APP_TO_LDU_XZ;
+      const y = -(brick.position?.y || 0) / APP_TO_LDU_Y; // Flip Y (our Y up, LDraw Y down in file)
+      const z = (brick.position?.z || 0) / APP_TO_LDU_XZ;
+      
+      // Rotation matrix - use stored matrix if available, otherwise identity
+      let m_a = 1, m_b = 0, m_c = 0, m_d = 0, m_e = 1, m_f = 0, m_g = 0, m_h = 0, m_i = 1;
+      if (brick.rotationMatrix && brick.rotationMatrix.length === 9) {
+        [m_a, m_b, m_c, m_d, m_e, m_f, m_g, m_h, m_i] = brick.rotationMatrix;
+      } else if (brick.angle) {
+        // Fallback to Y rotation only
+        const cos = Math.cos(brick.angle);
+        const sin = Math.sin(brick.angle);
+        m_a = cos; m_c = sin;
+        m_g = -sin; m_i = cos;
+      }
+      
+      // Part filename - add .dat extension if not present
+      let partFile = brick.brickID || 'missing';
+      if (typeof partFile !== 'string') {
+        console.warn(`Brick ${index} has invalid brickID:`, brick.brickID);
+        partFile = 'missing';
+      }
+      if (!partFile.endsWith('.dat')) {
+        partFile += '.dat';
+      }
 
-    lines.push(`1 ${ldrawColor} ${x} ${y} ${z} ${m_a} ${m_b} ${m_c} ${m_d} ${m_e} ${m_f} ${m_g} ${m_h} ${m_i} ${partFile}`);
+      lines.push(`1 ${ldrawColor} ${x} ${y} ${z} ${m_a} ${m_b} ${m_c} ${m_d} ${m_e} ${m_f} ${m_g} ${m_h} ${m_i} ${partFile}`);
+    } catch (err) {
+      console.error(`Error serializing brick ${index}:`, err, brick);
+      // Skip this brick rather than crashing
+    }
   });
   
   return lines.join('\n');
@@ -116,6 +129,8 @@ function bricksToMPD(bricks, name = 'Untitled') {
 function mpdToBricks(mpdContent) {
   const bricks = [];
   const lines = mpdContent.split('\n');
+  const LDU_TO_APP_XZ = 5;
+  const LDU_TO_APP_Y = 99.9 / 24;
   
   for (const line of lines) {
     const trimmed = line.trim();
@@ -132,9 +147,10 @@ function mpdToBricks(mpdContent) {
       const file = parts[14];
       
       // Convert from LDraw units to our units
-      const posX = x / 2.5;
-      const posY = -y / 2.5; // Flip Y back
-      const posZ = z / 2.5;
+      // LDraw: 20 LDU = 1 stud, App: 100 units = 1 stud
+      const posX = x * LDU_TO_APP_XZ;
+      const posY = -y * LDU_TO_APP_Y; // Flip Y back
+      const posZ = z * LDU_TO_APP_XZ;
       
       // Extract part number from filename
       const partNum = file.replace('.dat', '');
@@ -314,6 +330,7 @@ function parseMPD(
       color: resolvedColor,
       colorType: 'solid',
       brickID: partNum,
+      rotationMatrix: transform.matrix,
       angle: deriveYAngle(transform.matrix),
       brickType: 'BASIC_BRICK',
       width: dims.width,
