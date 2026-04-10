@@ -248,20 +248,70 @@ function inferDimensionsFromPartId(partNum) {
   return { width: 1, height: 3, depth: 1 };
 }
 
-function parseMPD(
-  mpdContent,
-  basePath = '',
-  depth = 0,
-  maxDepth = 10,
-  parentTransform = null,
-  parentColor = '#FFFFFF'
-) {
-  if (depth > maxDepth) return [];
+const missingPartWarnings = new Set();
 
+function ldrawPartExists(file) {
   const fs = require('fs');
   const path = require('path');
-  const bricks = [];
+  const normalized = file.replace(/\\/g, '/');
+  const candidates = [
+    path.join(__dirname, 'ldraw', 'parts', normalized),
+    path.join(__dirname, 'ldraw', 'p', normalized),
+    path.join(__dirname, 'ldraw', 'parts', 's', normalized),
+    path.join(__dirname, 'ldraw', normalized),
+  ];
+  return candidates.some((candidate) => fs.existsSync(candidate));
+}
+
+function splitMPDSections(mpdContent, fallbackName = 'main.ldr') {
   const lines = mpdContent.split('\n');
+  const sections = new Map();
+  let currentName = null;
+  let currentLines = [];
+
+  const flush = () => {
+    if (currentName !== null) {
+      sections.set(currentName.trim().toLowerCase(), currentLines.join('\n'));
+    }
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^0\s+FILE\s+[^:]/i.test(trimmed)) {
+      flush();
+      currentName = trimmed.replace(/^0\s+FILE\s+/i, '').trim();
+      currentLines = [line];
+    } else {
+      if (currentName === null) currentName = fallbackName;
+      currentLines.push(line);
+    }
+  }
+  flush();
+  return sections;
+}
+
+function parseModelContent(
+  modelContent,
+  sectionName,
+  sectionMap,
+  basePath,
+  depth,
+  maxDepth,
+  parentColor = '#FFFFFF'
+) {
+  const fs = require('fs');
+  const path = require('path');
+
+  const normalizedSectionName = (sectionName || '').trim();
+  const model = {
+    type: 'model',
+    name: path.basename(normalizedSectionName || basePath || 'Untitled').replace(/\.(mpd|ldr)$/i, ''),
+    children: [],
+  };
+
+  if (depth > maxDepth) return model;
+
+  const lines = modelContent.split('\n');
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -286,35 +336,58 @@ function parseMPD(
       parseFloat(parts[12]),
       parseFloat(parts[13]),
     ];
-    const file = parts.slice(14).join(' ');
-
-    const transform = {
-      matrix: parentTransform
-        ? multiplyMatrices3x3(parentTransform.matrix, localMatrix)
-        : localMatrix,
-      translation: parentTransform
-        ? transformPoint(parentTransform.matrix, localPos, parentTransform.translation)
-        : localPos,
-    };
+    const file = parts.slice(14).join(' ').trim();
+    const normalizedFile = file.toLowerCase();
 
     const resolvedColor = resolveColor(colorCode, parentColor);
 
-    const isSubmodel = file.endsWith('.ldr') || file.endsWith('.mpd');
+    const isSubmodel = normalizedFile.endsWith('.ldr') || normalizedFile.endsWith('.mpd');
 
     if (isSubmodel) {
       try {
-        const subPath = path.join(path.dirname(basePath), file);
-        if (fs.existsSync(subPath)) {
-          const subContent = fs.readFileSync(subPath, 'utf8');
-          const subBricks = parseMPD(
+        if (sectionMap.has(normalizedFile)) {
+          const subContent = sectionMap.get(normalizedFile);
+          const subModel = parseModelContent(
             subContent,
-            subPath,
+            file,
+            sectionMap,
+            basePath,
             depth + 1,
             maxDepth,
-            transform,
             resolvedColor
           );
-          bricks.push(...subBricks);
+          model.children.push({
+            type: 'model',
+            object: subModel,
+            transform: {
+              position: localPos,
+              rotationMatrix: localMatrix,
+            },
+          });
+        } else {
+          const subPath = path.join(path.dirname(basePath), file);
+          if (fs.existsSync(subPath)) {
+            const subContent = fs.readFileSync(subPath, 'utf8');
+            const externalSections = splitMPDSections(subContent, file);
+            const rootName = externalSections.keys().next().value || file;
+            const subModel = parseModelContent(
+              externalSections.get(rootName),
+              rootName,
+              externalSections,
+              subPath,
+              depth + 1,
+              maxDepth,
+              resolvedColor
+            );
+            model.children.push({
+              type: 'model',
+              object: subModel,
+              transform: {
+                position: localPos,
+                rotationMatrix: localMatrix,
+              },
+            });
+          }
         }
       } catch (e) {
         // Ignore missing/unreadable submodels for now.
@@ -323,23 +396,48 @@ function parseMPD(
     }
 
     const partNum = file.replace('.dat', '');
+    if (!ldrawPartExists(file)) {
+      if (!missingPartWarnings.has(file)) {
+        missingPartWarnings.add(file);
+        console.warn(`Skipping missing LDraw part reference: ${file}`);
+      }
+      continue;
+    }
     const dims = inferDimensionsFromPartId(partNum);
-    bricks.push({
-      uuid: Math.random().toString(36).substr(2, 9),
-      position: transform.translation,
-      color: resolvedColor,
-      colorType: 'solid',
-      brickID: partNum,
-      rotationMatrix: transform.matrix,
-      angle: deriveYAngle(transform.matrix),
-      brickType: 'BASIC_BRICK',
-      width: dims.width,
-      height: dims.height,
-      depth: dims.depth,
+    model.children.push({
+      type: 'brick',
+      object: {
+        uuid: Math.random().toString(36).substr(2, 9),
+        color: resolvedColor,
+        colorType: 'solid',
+        brickID: partNum,
+        brickType: 'BASIC_BRICK',
+        width: dims.width,
+        height: dims.height,
+        depth: dims.depth,
+      },
+      transform: {
+        position: localPos,
+        rotationMatrix: localMatrix,
+      },
     });
   }
 
-  return bricks;
+  return model;
+}
+
+function parseMPD(
+  mpdContent,
+  basePath = '',
+  depth = 0,
+  maxDepth = 10,
+  parentColor = '#FFFFFF'
+) {
+  const fallbackName = basePath ? require('path').basename(basePath) : 'main.ldr';
+  const sections = splitMPDSections(mpdContent, fallbackName);
+  const rootName = sections.keys().next().value || fallbackName;
+  const rootContent = sections.get(rootName) || mpdContent;
+  return parseModelContent(rootContent, rootName, sections, basePath, depth, maxDepth, parentColor);
 }
 
 function normalizeBricksToFloor(bricks) {
@@ -367,4 +465,91 @@ function normalizeBricksToFloor(bricks) {
   return bricks;
 }
 
-module.exports = { bricksToMPD, parseMPD, normalizeBricksToFloor };
+// Convert a hierarchical Model to MPD format (saves main model and sub-models)
+function modelToMPD(model, basePath = '') {
+  const fs = require('fs');
+  const path = require('path');
+  const APP_TO_LDU_XZ = 5;
+  const APP_TO_LDU_Y = 99.9 / 24;
+
+  function closestLDrawColor(color) {
+    const safe = color || '#FFFFFF';
+    let ldrawColor = 0;
+    let minDist = Infinity;
+    for (const [code, rgb] of Object.entries(LDRAW_COLORS)) {
+      const r2 = parseInt(rgb.slice(1, 3), 16);
+      const g2 = parseInt(rgb.slice(3, 5), 16);
+      const b2 = parseInt(rgb.slice(5, 7), 16);
+      const r1 = parseInt(safe.slice(1, 3), 16);
+      const g1 = parseInt(safe.slice(3, 5), 16);
+      const b1 = parseInt(safe.slice(5, 7), 16);
+      const dist = (r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2;
+      if (dist < minDist) {
+        minDist = dist;
+        ldrawColor = parseInt(code, 10);
+      }
+    }
+    return ldrawColor;
+  }
+  
+  let subModelCounter = 0;
+  
+  function writeModel(modelNode, filePath, parentName = '') {
+    const lines = [];
+    const modelName = modelNode.name || 'Untitled';
+    
+    // Header
+    lines.push(`0 ${modelName}`);
+    lines.push(`0 Name: ${modelName}.mpd`);
+    lines.push('0 Author: QK Lego Builder');
+    lines.push('0 !LDRAW_ORG Unofficial_Model');
+    lines.push('');
+    
+    // Write children
+    for (const child of (modelNode.children || [])) {
+      if (child.type === 'brick') {
+        // Write brick reference
+        const pos = child.transform?.position || child.object?.position || { x: 0, y: 0, z: 0 };
+        const rot = child.transform?.rotationMatrix || child.object?.rotationMatrix || [1,0,0,0,1,0,0,0,1];
+        const color = closestLDrawColor(child.object?.color);
+        const partFile = child.object?.brickID ? `${child.object.brickID}.dat` : 'missing.dat';
+        const x = pos.x / APP_TO_LDU_XZ;
+        const y = -pos.y / APP_TO_LDU_Y;
+        const z = pos.z / APP_TO_LDU_XZ;
+        
+        lines.push(`1 ${color} ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${partFile}`);
+      } else if (child.type === 'model') {
+        // Generate name for sub-model if it doesn't have one
+        let subModelName = child.object?.name || child.name;
+        if (!subModelName || subModelName === 'Untitled') {
+          subModelCounter++;
+          subModelName = `${parentName || modelName}-${subModelCounter}`;
+          if (child.object) child.object.name = subModelName;
+        }
+
+        const subFileName = `${subModelName}.mpd`;
+        const subFilePath = path.join(path.dirname(filePath), subFileName);
+
+        const pos = child.transform?.position || { x: 0, y: 0, z: 0 };
+        const rot = child.transform?.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1];
+        const x = pos.x / APP_TO_LDU_XZ;
+        const y = -pos.y / APP_TO_LDU_Y;
+        const z = pos.z / APP_TO_LDU_XZ;
+        lines.push(
+          `1 16 ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${subFileName}`
+        );
+        
+        // Recursively write sub-model
+        writeModel(child.object || child, subFilePath, subModelName);
+      }
+    }
+    
+    fs.writeFileSync(filePath, lines.join('\n'));
+  }
+  
+  const mainPath = basePath || 'model.mpd';
+  writeModel(model, mainPath, model.name);
+  return mainPath;
+}
+
+module.exports = { bricksToMPD, mpdToBricks, parseMPD, normalizeBricksToFloor, modelToMPD };

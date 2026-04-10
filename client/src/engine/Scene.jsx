@@ -4,6 +4,7 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 
 import { BOUNDINGBOX_OFFSET } from './Brick';
 import { BasicBrick } from './BasicBrick';
+import { Model } from './Model';
 
 import Message from '../components/Message';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -74,41 +75,39 @@ class Scene extends React.Component {
   }
 
   // Handles messages from server - typically, because another client made changes to the scene
-  async _handleWSMessage(_this, message) {
-    // normal "this" will be WS object for some reason, so don't use!
-    //console.log("Received WS message: "+JSON.stringify(message.data));
+  async _handleWSMessage(message) {
     const action = JSON.parse(message.data);
     switch (action.type) {
-      case Action.Create:
-        let brick = _this.createAndAddBrickFromObject(action.brick);
+      case Action.Create: {
+        await this.createAndAddBrickFromObject(action.brick);
         console.log('Added new brick because server told us to '); //+JSON.stringify(brick));
         break;
-      case Action.Delete:
+      }
+      case Action.Delete: {
         let brickToDelete = this.findBrickInModel(action.uuid);
         console.log(`Server instructed me to delete brick ${action.uuid}`); //, found as ${brickToDelete}`);
         this._deleteBrick(brickToDelete);
         break;
-      case Action.Move:
+      }
+      case Action.Move: {
         let brickToMove = this.findBrickInModel(action.brick.uuid);
         console.log(`Server instructed me to move brick ${action.brick.uuid}`); //, found as ${brickToDelete}`);
-        brickToMove.position.clone(action.brick.position); // TODO: also move ghost?
+        brickToMove.setPosition(action.brick.position, true);
         break;
-      case Action.Reload:
+      }
+      case Action.Reload: {
         console.log(`Server instructed me to do a full reload`);
         // Remove all bricks from scene
         const allBricks = this.getAllBricks();
         for (let i = 0; i < allBricks.length; i++) {
           allBricks[i].removeFromScene(this.scene, this.ghostScene);
         }
-        this.worldModel = { type: 'model', name: 'Scene', children: [] };
+        this.worldModel = new Model('Current World');
         this.ghostBricks = [];
-        let array = action.world;
-        console.log(`Loading ${array.length} bricks`);
-        // Load all bricks in parallel and wait for completion
-        const loadPromises = array.map((state) => this.createAndAddBrickFromObject(state));
-        await Promise.all(loadPromises);
+        await this.loadWorldModel(action.worldModel);
         this._renderScene();
         break;
+      }
       default:
         console.log('Action type not supported yet: ' + action.type);
         break;
@@ -128,7 +127,7 @@ class Scene extends React.Component {
       console.log('connected to server via web socket');
     };
 
-    this.ws.onmessage = (message) => this._handleWSMessage(this, message); // on receiving a message, add it to the list of messages
+    this.ws.onmessage = (message) => this._handleWSMessage(message); // on receiving a message, add it to the list of messages
   }
 
   _sendActionToWebSocket(action) {
@@ -181,13 +180,21 @@ class Scene extends React.Component {
   }
 
   _initCore() {
-    const { mode } = this.props;
-
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
     this.ghostScene = new THREE.Scene();
-    this.worldModel = { type: 'model', name: 'Scene', children: [] };
+    this.worldModel = new Model('Current World');
     this.ghostBricks = [];
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setClearColor(0xffffff);
+    renderer.setPixelRatio(1);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer = renderer;
+
+    this.modeSetup(null);
+    this.mount.appendChild(this.renderer.domElement);
   }
 
   // Helper to get flat list of all bricks from model tree
@@ -195,10 +202,15 @@ class Scene extends React.Component {
     const bricks = [];
     const traverse = (node) => {
       if (!node) return;
-      if (node.type === 'brick') {
+      if (node instanceof BasicBrick) {
         bricks.push(node);
-      } else if (node.type === 'model' && node.children) {
-        node.children.forEach(traverse);
+      } else if (node instanceof Model) {
+        node.children.forEach((child) => traverse(child.object));
+      } else if (node.type === 'brick' && node.object) {
+        bricks.push(node.object);
+      } else if (node.type === 'model' && (node.object || node.children)) {
+        const model = node.object || node;
+        (model.children || []).forEach((child) => traverse(child.object || child));
       }
     };
     traverse(this.worldModel);
@@ -209,6 +221,58 @@ class Scene extends React.Component {
   findBrickInModel(uuid) {
     const bricks = this.getAllBricks();
     return bricks.find((b) => b._uuid === uuid);
+  }
+
+  findBrickNodeInModel(model, brick) {
+    if (!model || !model.children) return null;
+    for (const child of model.children) {
+      if (child.type === 'brick' && child.object === brick) {
+        return child;
+      }
+      if (child.type === 'model') {
+        const found = this.findBrickNodeInModel(child.object, brick);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  syncBrickTransform(brick) {
+    const node = this.findBrickNodeInModel(this.worldModel, brick);
+    if (!node) return;
+    const state = brick.save();
+    node.transform = {
+      position: state.position,
+      rotationMatrix: state.rotationMatrix,
+    };
+  }
+
+  composeTransform(parentTransform, childTransform) {
+    const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    const pRot = parentTransform?.rotationMatrix || identity;
+    const pPos = parentTransform?.position || { x: 0, y: 0, z: 0 };
+    const cRot = childTransform?.rotationMatrix || identity;
+    const cPos = childTransform?.position || { x: 0, y: 0, z: 0 };
+
+    const rot = [
+      pRot[0] * cRot[0] + pRot[1] * cRot[3] + pRot[2] * cRot[6],
+      pRot[0] * cRot[1] + pRot[1] * cRot[4] + pRot[2] * cRot[7],
+      pRot[0] * cRot[2] + pRot[1] * cRot[5] + pRot[2] * cRot[8],
+      pRot[3] * cRot[0] + pRot[4] * cRot[3] + pRot[5] * cRot[6],
+      pRot[3] * cRot[1] + pRot[4] * cRot[4] + pRot[5] * cRot[7],
+      pRot[3] * cRot[2] + pRot[4] * cRot[5] + pRot[5] * cRot[8],
+      pRot[6] * cRot[0] + pRot[7] * cRot[3] + pRot[8] * cRot[6],
+      pRot[6] * cRot[1] + pRot[7] * cRot[4] + pRot[8] * cRot[7],
+      pRot[6] * cRot[2] + pRot[7] * cRot[5] + pRot[8] * cRot[8],
+    ];
+
+    const pos = {
+      x: pRot[0] * cPos.x + pRot[1] * cPos.y + pRot[2] * cPos.z + pPos.x,
+      y: pRot[3] * cPos.x + pRot[4] * cPos.y + pRot[5] * cPos.z + pPos.y,
+      z: pRot[6] * cPos.x + pRot[7] * cPos.y + pRot[8] * cPos.z + pPos.z,
+    };
+
+    return { position: pos, rotationMatrix: rot };
   }
 
   modeSetup(prevMode) {
@@ -305,7 +369,7 @@ class Scene extends React.Component {
       transformControl.addEventListener('change', () => {
         this._needsRendering = true;
       });
-      transformControl.addEventListener('dragging-changed', function (event) {
+      transformControl.addEventListener('dragging-changed', (event) => {
         if (this.controls) this.controls.enabled = !event.value;
       });
       this.transformControl = transformControl;
@@ -399,10 +463,11 @@ class Scene extends React.Component {
   }
 
   _onWindowResize(event) {
+    if (!this.camera || !this.renderer) return;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    if (this.controls.handleResize) this.controls.handleResize();
+    if (this.controls && this.controls.handleResize) this.controls.handleResize();
     this._needsRendering = true;
   }
 
@@ -527,26 +592,64 @@ class Scene extends React.Component {
    * Obviously the server needs to compute hashes with the same algorithm!
    */
   getWorldSignature() {
-    let arrayOfBricks = [];
-    const allBricks = this.getAllBricks();
-    for (let i = 0; i < allBricks.length; i++) {
-      let state = allBricks[i].save();
-      // Normalize for consistent hashing - round positions to avoid floating point errors
-      const normalized = {
-        uuid: state.uuid,
-        position: {
-          x: Math.round(state.position.x * 1000) / 1000,
-          y: Math.round(state.position.y * 1000) / 1000,
-          z: Math.round(state.position.z * 1000) / 1000,
-        },
-        color: state.color,
-        colorType: state.colorType,
-        brickID: state.brickID,
-        angle: Math.round(state.angle * 10000) / 10000,
-      };
-      arrayOfBricks.push(normalized);
-    }
-    let text = JSON.stringify(arrayOfBricks);
+    const identityTransform = {
+      position: { x: 0, y: 0, z: 0 },
+      rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    };
+    const normalizeNodeForHash = (node, parentTransform = null) => {
+      if (!node) return null;
+
+      if (node instanceof Model) {
+        return {
+          type: 'model',
+          name: node.name,
+          children: (node.children || []).map((child) => normalizeNodeForHash(child, parentTransform)),
+        };
+      }
+
+      if (node.type === 'brick') {
+        const brick = node.object;
+        const transform = this.composeTransform(
+          parentTransform,
+          node.transform || {
+            position: brick.save().position,
+            rotationMatrix: brick.save().rotationMatrix,
+          }
+        );
+        const brickState = brick.save();
+        const pos = transform.position || brickState.position || { x: 0, y: 0, z: 0 };
+        return {
+          type: 'brick',
+          uuid: brickState.uuid,
+          brickID: brickState.brickID,
+          color: brickState.color,
+          colorType: brickState.colorType,
+          position: {
+            x: Math.round(pos.x * 1000) / 1000,
+            y: Math.round(pos.y * 1000) / 1000,
+            z: Math.round(pos.z * 1000) / 1000,
+          },
+          rotationMatrix:
+            transform.rotationMatrix || brickState.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        };
+      }
+
+      if (node.type === 'model') {
+        const model = node.object || node;
+        const modelTransform = node.object
+          ? this.composeTransform(parentTransform, node.transform || identityTransform)
+          : parentTransform;
+        return {
+          type: 'model',
+          name: model.name,
+          children: (model.children || []).map((child) => normalizeNodeForHash(child, modelTransform)),
+        };
+      }
+
+      return null;
+    };
+
+    let text = JSON.stringify(normalizeNodeForHash(this.worldModel));
     var hash = 0; // simple implementation of Java's String.hashCode();
     for (var i = 0; i < text.length; i++) {
       var char = text.charCodeAt(i);
@@ -676,9 +779,8 @@ class Scene extends React.Component {
       switch (mode) {
         case Modes.Delete:
           if (intersect.object !== this.plane && intersect.object !== this.ghostPlane) {
-            // intersect.object will be this.plane if building a brick at y=0, otherwise it's the brick below
-            var ghost = intersect.object;
-            var brick = ghost.brick;
+            const brick = this.resolveBrickFromObject(intersect.object);
+            if (!brick) return;
             // now send message to server - before making the deletion locally, otherwise the world signature will be wrong!
             let action = new Action(Action.Delete, this.getWorldSignature());
             action.deleteBrick(brick);
@@ -719,6 +821,7 @@ class Scene extends React.Component {
       let action = new Action(Action.Move, hash);
       action.moveBrick(this.rollOverBrick);
       this._sendActionToWebSocket(action);
+      this.syncBrickTransform(this.rollOverBrick);
       this.isBrickSelected = false;
       this.rollOverBrick = null;
       this.rollOverGhostBlock = null;
@@ -729,8 +832,9 @@ class Scene extends React.Component {
         return;
       }
       this.isBrickSelected = true;
-      let ghost = intersect.object;
-      let brick = ghost.brick;
+      let brick = this.resolveBrickFromObject(intersect.object);
+      if (!brick) return;
+      let ghost = brick.ghostBlock;
       let brickModel = brick.getModel();
       this.brickStartingPosition = brickModel.position.clone();
       this.brickStartingMaterial = brickModel.material;
@@ -765,19 +869,22 @@ class Scene extends React.Component {
     // Remove from model tree
     const removeFromModel = (model, targetBrick) => {
       if (!model || !model.children) return false;
-      const initialLength = model.children.length;
+      let removed = false;
       model.children = model.children.filter((child) => {
-        if (child.type === 'brick' && child === targetBrick) {
+        if (child.type === 'brick' && child.object === targetBrick) {
+          removed = true;
           return false;
         } else if (child.type === 'model') {
-          removeFromModel(child, targetBrick);
+          const childModel = child.object || child;
+          if (removeFromModel(childModel, targetBrick)) removed = true;
           return true;
         }
         return true;
       });
-      return model.children.length < initialLength;
+      return removed;
     };
     removeFromModel(this.worldModel, brick);
+    const ghost = brick.ghostBlock;
     this.ghostBricks = this.ghostBricks.filter((value) => {
       return value !== ghost;
     });
@@ -790,8 +897,20 @@ class Scene extends React.Component {
       return;
     }
     const { brickColor } = this.props;
-    intersect.object.brick.setColor(brickColor);
+    const brick = this.resolveBrickFromObject(intersect.object);
+    if (!brick) return;
+    brick.setColor(brickColor);
     this._needsRendering = true;
+  }
+
+  resolveBrickFromObject(object) {
+    let current = object;
+    while (current) {
+      if (current.userData && current.userData.brick) return current.userData.brick;
+      if (current.brick) return current.brick;
+      current = current.parent;
+    }
+    return null;
   }
 
   async _onKeyDown(event, scene) {
@@ -923,11 +1042,11 @@ class Scene extends React.Component {
   _animate() {
     let delta = this.clock.getDelta();
 
-    if (this.controls.enabled && this.controls.update) {
+    if (this.controls && this.controls.enabled && this.controls.update) {
       this.controls.update(delta);
     }
 
-    if (this.controls.target) {
+    if (this.controls && this.controls.target) {
       let currentOrbitZoom = this.controls.target.distanceTo(this.controls.object.position);
       if (currentOrbitZoom !== this._previousOrbitZoom) {
         // a hack: I need to re-render if the user is zooming in (drag on trackpad)
@@ -981,7 +1100,8 @@ class Scene extends React.Component {
   }
 
   _renderScene() {
-    if (this.controls.update) {
+    if (!this.renderer || !this.camera) return;
+    if (this.controls && this.controls.update) {
       this.controls.update(this.clock.getDelta());
     }
     this.renderer.clear();
@@ -996,6 +1116,38 @@ class Scene extends React.Component {
     return brick;
   }
 
+  async loadWorldModel(node, parentModel = null, parentTransform = null) {
+    if (!node) return null;
+    if (!parentModel) {
+      this.worldModel = new Model(node.name || 'Current World');
+      parentModel = this.worldModel;
+    }
+
+    const children = node.children || [];
+    for (const child of children) {
+      if (child.type === 'brick') {
+        const brickState = child.object || child;
+        const transform = this.composeTransform(parentTransform, child.transform || {});
+        const brick = await BasicBrick.load({
+          ...brickState,
+          position: transform.position || brickState.position,
+          rotationMatrix: transform.rotationMatrix || brickState.rotationMatrix,
+        });
+        this._setupNewBrick(brick, parentModel, transform);
+      } else if (child.type === 'model') {
+        const childModelData = child.object || child;
+        const runtimeModel = new Model(childModelData.name || 'Untitled');
+        parentModel.addModel(runtimeModel, child.transform || null);
+        await this.loadWorldModel(
+          childModelData,
+          runtimeModel,
+          this.composeTransform(parentTransform, child.transform || {})
+        );
+      }
+    }
+    return parentModel;
+  }
+
   async _loadState() {
     try {
       const res = await window.fetch('/api/get-scene');
@@ -1007,15 +1159,10 @@ class Scene extends React.Component {
         console.log("Wrong file version, can't load: " + version);
         return;
       }
-      let array = objectsLoaded.world;
-      console.log(`Loading ${array.length} bricks`);
-
-      // Load all bricks in parallel
-      const loadPromises = array.map((state) => this.createAndAddBrickFromObject(state));
-      await Promise.all(loadPromises);
+      await this.loadWorldModel(objectsLoaded.worldModel);
 
       this._renderScene();
-      console.log(`Done loading ${array.length} bricks`);
+      console.log(`Done loading world model`);
     } catch (error) {
       console.log(`Unable to load scene from server. Error ${error}`);
       this.setState({
@@ -1025,26 +1172,43 @@ class Scene extends React.Component {
     }
   }
 
-  _setupNewBrick(brick) {
+  _setupNewBrick(brick, parentModel = null, transform = null) {
     brick.addToScene(this.scene, this.ghostScene);
-    // Add to world model
-    this.worldModel.children.push(brick);
+    const targetModel = parentModel || this.worldModel;
+    targetModel.addBrick(brick, transform);
+
+    brick.getModel().traverse((child) => {
+      child.userData = child.userData || {};
+      child.userData.brick = brick;
+    });
     let ghostBrick = brick.ghostBlock;
     this.ghostBricks.push(ghostBrick);
     this._needsRendering = true;
   }
 
   _saveState() {
-    // saves to localStorage (no longer useful!).
-    let arrayOfBricks = [];
-    const allBricks = this.getAllBricks();
-    for (let i = 0; i < allBricks.length; i++) {
-      let state = allBricks[i].save();
-      arrayOfBricks.push(state);
-    }
+    // saves to localStorage (legacy/debug only).
+    const serializeModel = (model) => ({
+      type: 'model',
+      name: model.name,
+      children: (model.children || []).map((child) => {
+        if (child.type === 'brick') {
+          return {
+            type: 'brick',
+            object: child.object.save(),
+            transform: child.transform || null,
+          };
+        }
+        return {
+          type: 'model',
+          object: serializeModel(child.object),
+          transform: child.transform || null,
+        };
+      }),
+    });
     let objectToSave = {
       version: FILE_VERSION_CURRENT,
-      world: arrayOfBricks,
+      worldModel: serializeModel(this.worldModel),
     };
     let json = JSON.stringify(objectToSave);
     //let json = new Blob([JSON.stringify(simplified)];

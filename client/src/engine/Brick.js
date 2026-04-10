@@ -40,7 +40,6 @@ export class Brick {
       color: this.color,
       colorType: this.colorType,
       brickID: this._brickID,
-      angle: this._angle,
       rotationMatrix: [
         me[0],
         me[4],
@@ -88,7 +87,6 @@ export class Brick {
           polygonOffsetFactor: 1, // positive value pushes polygon further away
           polygonOffsetUnits: 1,
         });
-        break;
       case ColorCollections.colorTypes.Transparent:
         return new THREE.MeshPhongMaterial({
           color: color,
@@ -99,7 +97,6 @@ export class Brick {
           polygonOffsetFactor: 1, // positive value pushes polygon further away
           polygonOffsetUnits: 1,
         });
-        break;
       case ColorCollections.colorTypes.Metallic:
         return new THREE.MeshStandardMaterial({
           color: color,
@@ -109,7 +106,6 @@ export class Brick {
           polygonOffsetFactor: 1, // positive value pushes polygon further away
           polygonOffsetUnits: 1,
         });
-        break;
 
       default:
         console.log('Unknown color type: ' + colorType);
@@ -120,67 +116,7 @@ export class Brick {
           polygonOffsetFactor: 1, // positive value pushes polygon further away
           polygonOffsetUnits: 1,
         });
-        break;
     }
-
-    /*var code = null;
-    // Triangle and line colours
-    var colour = 0xFF00FF;
-    var edgeColour = 0xFF00FF;
-    // Transparency
-    var alpha = 1;
-    var isTransparent = false;
-    // Self-illumination:
-    var luminance = 0;
-
-    var finishType = Materials.FINISH_TYPE_DEFAULT;
-    var canHaveEnvMap = true;
-
-    var edgeMaterial = null;
-
-    switch ( finishType ) {
-      case Materials.FINISH_TYPE_DEFAULT:
-        material = new THREE.MeshStandardMaterial( { color: colour, roughness: 0.3, envMapIntensity: 0.3, metalness: 0 } );
-        material.name = `Default Finish color=${colour}`;
-        break;
-
-      case Materials.FINISH_TYPE_PEARLESCENT:
-        // Try to imitate pearlescency by setting the specular to the complementary of the color, and low shininess
-        var specular = new THREE.Color( colour );
-        var hsl = specular.getHSL( { h: 0, s: 0, l: 0 } );
-        hsl.h = ( hsl.h + 0.5 ) % 1;
-        hsl.l = Math.min( 1, hsl.l + ( 1 - hsl.l ) * 0.7 );
-        specular.setHSL( hsl.h, hsl.s, hsl.l );
-        material = new THREE.MeshPhongMaterial( { color: colour, specular: specular, shininess: 10, reflectivity: 0.3 } );
-        material.name = `PEARLESCENT Finish color=${colour}`;
-        break;
-
-      case Materials.FINISH_TYPE_CHROME:
-        // Mirror finish surface
-        material = new THREE.MeshStandardMaterial( { color: colour, roughness: 0, metalness: 1 } );
-        material.name = `Chrome Finish color=${colour}`;
-        break;
-
-      case Materials.FINISH_TYPE_RUBBER:
-        // Rubber finish
-        material = new THREE.MeshStandardMaterial( { color: colour, roughness: 0.9, metalness: 0 } );
-        canHaveEnvMap = false;
-        material.name = `Rubber Finish color=${colour}`;
-        break;
-
-      case Materials.FINISH_TYPE_MATTE_METALLIC:
-        // Brushed metal finish
-        material = new THREE.MeshStandardMaterial( { color: colour, roughness: 0.8, metalness: 0.4 } );
-        material.name = `Matte Finish color=${colour}`;
-        break;
-
-      case Materials.FINISH_TYPE_METAL:
-        // Average metal finish
-        material = new THREE.MeshStandardMaterial( { color: colour, roughness: 0.2, metalness: 0.85 } );
-        material.name = `Metal Finish color=${colour}`;
-        break;
-      default: break;
-    }*/
   }
 
   addToScene(scene, ghostScene) {
@@ -190,6 +126,19 @@ export class Brick {
   removeFromScene(scene, ghostScene) {
     scene.remove(this.model);
     ghostScene.remove(this.ghostBlock);
+  }
+  setColor(color, colorType = this.colorType) {
+    this.color = color;
+    this.colorType = colorType;
+    const material = Brick.getMaterial(color, colorType);
+    this.model.traverse((child) => {
+      if (child.isMesh) {
+        child.material = material;
+      }
+    });
+    if (this.ghostBlock) {
+      this.ghostBlock.material = material;
+    }
   }
   rotateY(angle) {
     this._angle += angle;

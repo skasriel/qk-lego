@@ -136,8 +136,7 @@ function onKeyUp(event) {
 }
 
 function saveWorld() {
-  let json = '';
-  json = JSON.stringify(Object.assign({}, buildingBlocks));
+  const json = JSON.stringify(Object.assign({}, buildingBlocks));
   console.log(json);
   /*for(let block of buildingBlocks) {
     json = block.save(json);

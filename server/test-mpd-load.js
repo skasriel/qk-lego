@@ -2,6 +2,19 @@ const fs = require('fs');
 const path = require('path');
 const { bricksToMPD, mpdToBricks, parseMPD } = require('./mpd-utils');
 
+function countBricks(node) {
+  if (!node) return 0;
+  if (node.type === 'brick') return 1;
+  if (node.type === 'model') {
+    return (node.children || []).reduce((sum, child) => {
+      if (child.type === 'brick') return sum + 1;
+      if (child.type === 'model') return sum + countBricks(child.object || child);
+      return sum;
+    }, 0);
+  }
+  return 0;
+}
+
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
@@ -41,8 +54,7 @@ function testAllModels() {
     try {
       const content = fs.readFileSync(filePath, 'utf8');
       const model = parseMPD(content, filePath);
-      const parsed = flattenModel(model);
-      results.push({ file, ok: true, count: parsed.length });
+      results.push({ file, ok: true, count: countBricks(model) });
     } catch (error) {
       results.push({ file, ok: false, error: error.message });
     }

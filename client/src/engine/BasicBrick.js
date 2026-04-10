@@ -141,7 +141,6 @@ export class BasicBrick extends Brick {
       width: this.width,
       height: this.height,
       depth: this.depth,
-      position: this.model.position,
     };
     return state;
   }
@@ -194,8 +193,6 @@ export class BasicBrick extends Brick {
       brick.ghostBlock.matrix.copy(brick.model.matrix);
       brick.model.updateMatrixWorld(true);
       brick.ghostBlock.updateMatrixWorld(true);
-    } else if (state.angle !== 0) {
-      brick.rotateY(state.angle);
     }
 
     return brick;

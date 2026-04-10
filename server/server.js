@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const http = require('http');
-const { bricksToMPD, parseMPD, normalizeBricksToFloor, flattenModel } = require('./mpd-utils');
+const { parseMPD, modelToMPD } = require('./mpd-utils');
 
 // Enable JSON parsing for POST requests
 app.use(express.json());
@@ -103,11 +103,7 @@ function loadWorldFromDisk() {
       console.log(`Incorrect file version ${worldObject.version}, expected ${FILE_VERSION_CURRENT}`);
       return;
     }
-    worldModel = {
-      type: 'model',
-      name: 'Current World',
-      children: (worldObject.world || []).map(b => ({ ...b, type: 'brick' }))
-    };
+    worldModel = sceneDataToModel(worldObject.worldModel || worldObject.world || []);
     return;
   }
   
@@ -119,18 +115,14 @@ function loadWorldFromDisk() {
 loadWorldFromDisk();
 
 function persistWorld() {
-  const flatBricks = flattenModel(worldModel);
   let response = {
     version: FILE_VERSION_CURRENT,
-    numberBricks: flatBricks.length,
-    world: flatBricks,
+    worldModel: worldModel,
   };
   return response;
 }
 function saveWorldToDisk() { // TODO: use async version of writeFile
-  const flatBricks = flattenModel(worldModel);
-  const mpdContent = bricksToMPD(flatBricks, 'Current World');
-  fs.writeFileSync(worldFileName.replace('.json', '.mpd'), mpdContent);
+  modelToMPD(worldModel, worldFileName.replace('.json', '.mpd'));
 }
 
 app.use(function (req, res, next) { // TODO: either do something here or delete
@@ -187,10 +179,7 @@ app.post('/api/scenes/save', function(req, res) {
   const sceneFile = path.join(scenesDir, `${safeNameSave}.mpd`);
   
   try {
-    const flatBricks = flattenModel(worldModel);
-    const mpdContent = bricksToMPD(flatBricks, name);
-    fs.writeFileSync(sceneFile, mpdContent);
-    console.log(`Saved scene "${name}" to ${sceneFile} (${flatBricks.length} bricks)`);
+    modelToMPD(worldModel, sceneFile);
     res.json({ success: true, name: name, path: safeNameSave });
   } catch (err) {
     console.error(`Failed to save scene: ${err}`);
@@ -216,7 +205,7 @@ app.get('/api/scenes/list', function(req, res) {
           const stats = fs.statSync(filePath);
           
           if (isMPD) {
-            // For MPD files, parse to count bricks
+            // For MPD files, count line type 1 references
             const content = fs.readFileSync(filePath, 'utf8');
             const brickCount = (content.match(/^1\s+/gm) || []).length;
             const name = f.replace('.mpd', '');
@@ -340,7 +329,7 @@ app.get('/api/scenes/load/:name', function(req, res) {
       }
       
       // Load into current world
-      worldModel = sceneData.worldModel || { type: 'model', name: sceneData.name || name, children: [] };
+      worldModel = sceneDataToModel(sceneData.worldModel || sceneData.world || [] , sceneData.name || name);
       saveWorldToDisk();
       
       console.log(`Loaded scene "${sceneData.name || name}"`);
@@ -363,14 +352,17 @@ app.get('/api/scenes/load/:name', function(req, res) {
 app.delete('/api/scenes/:name', function(req, res) {
   const { name } = req.params;
   const safeName = name.replace(/[^a-z0-9_\-\.]/gi, '_');
-  const sceneFile = path.join(scenesDir, `${safeName}.json`);
-  
+  const sceneFile = path.join(scenesDir, `${safeName}.mpd`);
+
   if (!fs.existsSync(sceneFile)) {
     return res.status(404).json({ error: 'Scene not found' });
   }
   
   try {
-    fs.unlinkSync(sceneFile);
+    const filesToDelete = Array.from(collectSubmodelFiles(sceneFile));
+    filesToDelete.forEach((file) => {
+      if (fs.existsSync(file)) fs.unlinkSync(file);
+    });
     console.log(`Deleted scene "${name}"`);
     res.json({ success: true });
   } catch (err) {
@@ -399,7 +391,14 @@ const wss = new WebSocket.Server({ server, path: '/ws-api'});
 function createAndAddBrickFromObject(brick) {
   // Add brick to world model
   if (!worldModel.children) worldModel.children = [];
-  worldModel.children.push({ ...brick, type: 'brick' });
+  worldModel.children.push({
+    type: 'brick',
+    object: brick,
+    transform: {
+      position: brick.position,
+      rotationMatrix: brick.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    },
+  });
   const count = countBricksInModel(worldModel);
   console.log(`Scene now contains ${count} bricks after adding ${brick}`);
   return brick;
@@ -410,28 +409,178 @@ function countBricksInModel(model) {
   let count = 0;
   for (const child of model.children) {
     if (child.type === 'brick') count++;
-    else if (child.type === 'model') count += countBricksInModel(child);
+    else if (child.type === 'model') count += countBricksInModel(child.object || child);
   }
   return count;
 }
 
+function findBrickInModel(model, uuid) {
+  if (!model || !model.children) return null;
+  for (const child of model.children) {
+    if (child.type === 'brick' && child.object?.uuid === uuid) {
+      return child.object;
+    }
+    if (child.type === 'model') {
+      const found = findBrickInModel(child.object || child, uuid);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function removeBrickFromModel(model, uuid) {
+  if (!model || !model.children) return false;
+  let removed = false;
+  model.children = model.children.filter((child) => {
+    if (child.type === 'brick' && child.object?.uuid === uuid) {
+      removed = true;
+      return false;
+    }
+    if (child.type === 'model') {
+      const childModel = child.object || child;
+      if (removeBrickFromModel(childModel, uuid)) removed = true;
+    }
+    return true;
+  });
+  return removed;
+}
+
+function composeTransform(parentTransform, childTransform) {
+  const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+  const pRot = parentTransform?.rotationMatrix || identity;
+  const pPos = parentTransform?.position || { x: 0, y: 0, z: 0 };
+  const cRot = childTransform?.rotationMatrix || identity;
+  const cPos = childTransform?.position || { x: 0, y: 0, z: 0 };
+
+  const rot = [
+    pRot[0] * cRot[0] + pRot[1] * cRot[3] + pRot[2] * cRot[6],
+    pRot[0] * cRot[1] + pRot[1] * cRot[4] + pRot[2] * cRot[7],
+    pRot[0] * cRot[2] + pRot[1] * cRot[5] + pRot[2] * cRot[8],
+    pRot[3] * cRot[0] + pRot[4] * cRot[3] + pRot[5] * cRot[6],
+    pRot[3] * cRot[1] + pRot[4] * cRot[4] + pRot[5] * cRot[7],
+    pRot[3] * cRot[2] + pRot[4] * cRot[5] + pRot[5] * cRot[8],
+    pRot[6] * cRot[0] + pRot[7] * cRot[3] + pRot[8] * cRot[6],
+    pRot[6] * cRot[1] + pRot[7] * cRot[4] + pRot[8] * cRot[7],
+    pRot[6] * cRot[2] + pRot[7] * cRot[5] + pRot[8] * cRot[8],
+  ];
+
+  const pos = {
+    x: pRot[0] * cPos.x + pRot[1] * cPos.y + pRot[2] * cPos.z + pPos.x,
+    y: pRot[3] * cPos.x + pRot[4] * cPos.y + pRot[5] * cPos.z + pPos.y,
+    z: pRot[6] * cPos.x + pRot[7] * cPos.y + pRot[8] * cPos.z + pPos.z,
+  };
+
+  return { position: pos, rotationMatrix: rot };
+}
+
+function normalizeNodeForHash(node, parentTransform = null) {
+  if (!node) return null;
+  const identityTransform = {
+    position: { x: 0, y: 0, z: 0 },
+    rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+  };
+  if (node.type === 'brick') {
+    const brick = node.object || node;
+    const transform = composeTransform(parentTransform, node.transform || {
+      position: brick.position,
+      rotationMatrix: brick.rotationMatrix,
+    });
+    const pos = transform.position || brick.position || { x: 0, y: 0, z: 0 };
+    return {
+      type: 'brick',
+      uuid: brick.uuid,
+      brickID: brick.brickID,
+      color: brick.color,
+      colorType: brick.colorType,
+      position: {
+        x: Math.round(pos.x * 1000) / 1000,
+        y: Math.round(pos.y * 1000) / 1000,
+        z: Math.round(pos.z * 1000) / 1000,
+      },
+      rotationMatrix: transform.rotationMatrix || brick.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    };
+  }
+  const childModel = node.object || node;
+  const modelTransform = node.type === 'model' && node.object ? composeTransform(parentTransform, node.transform || identityTransform) : parentTransform;
+  return {
+    type: 'model',
+    name: childModel.name,
+    children: (childModel.children || []).map((child) => normalizeNodeForHash(child, modelTransform)),
+  };
+}
+
+function sceneDataToModel(data, fallbackName = 'Current World') {
+  if (Array.isArray(data)) {
+    return {
+      type: 'model',
+      name: fallbackName,
+      children: data.map((brick) => ({
+        type: 'brick',
+        object: brick,
+        transform: {
+          position: brick.position,
+          rotationMatrix: brick.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        },
+      })),
+    };
+  }
+  if (!data) {
+    return { type: 'model', name: fallbackName, children: [] };
+  }
+  if (data.type === 'model') {
+    return {
+      type: 'model',
+      name: data.name || fallbackName,
+      children: (data.children || []).map((child) => {
+        if (child.type === 'brick') {
+          const brick = child.object || child;
+          return {
+            type: 'brick',
+            object: brick,
+            transform: child.transform || {
+              position: brick.position,
+              rotationMatrix: brick.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1],
+            },
+          };
+        }
+        if (child.type === 'model') {
+          const model = child.object || child;
+          return {
+            type: 'model',
+            object: sceneDataToModel(model, model.name || fallbackName),
+            transform: child.transform || {
+              position: { x: 0, y: 0, z: 0 },
+              rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+            },
+          };
+        }
+        return child;
+      }),
+    };
+  }
+  return { type: 'model', name: fallbackName, children: [] };
+}
+
+function collectSubmodelFiles(filePath, seen = new Set()) {
+  if (!fs.existsSync(filePath) || seen.has(filePath)) return seen;
+  seen.add(filePath);
+  const dir = path.dirname(filePath);
+  const content = fs.readFileSync(filePath, 'utf8');
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('1 ')) continue;
+    const parts = trimmed.split(/\s+/);
+    if (parts.length < 15) continue;
+    const ref = parts.slice(14).join(' ');
+    if (/\.(mpd|ldr)$/i.test(ref)) {
+      collectSubmodelFiles(path.join(dir, ref), seen);
+    }
+  }
+  return seen;
+}
+
 function getWorldSignature() {
-  // Flatten model for consistent hashing
-  const flatBricks = flattenModel(worldModel);
-  // Normalize bricks for consistent hashing
-  const normalized = flatBricks.map(b => ({
-    uuid: b.uuid,
-    position: {
-      x: Math.round(b.position.x * 1000) / 1000,
-      y: Math.round(b.position.y * 1000) / 1000,
-      z: Math.round(b.position.z * 1000) / 1000,
-    },
-    color: b.color,
-    colorType: b.colorType,
-    brickID: b.brickID,
-    angle: Math.round((b.angle || 0) * 10000) / 10000,
-  }));
-  const text = JSON.stringify(normalized);
+  const text = JSON.stringify(normalizeNodeForHash(worldModel));
   var hash = 0; // simple implementation of Java's String.hashCode();
   for (var i = 0; i < text.length; i++) {
     var char = text.charCodeAt(i);
@@ -454,13 +603,9 @@ wss.on('connection', function connection(ws) {
       const action = JSON.parse(message);
       const worldHash = getWorldSignature();
       if (action.worldHash != worldHash) {
-        console.log(`Error: client is out-of-sync: their hash ${action.worldHash} != ours ${worldHash} instructing them to reload!`);
-        let reload = persistWorld();
-        reload.worldHash = worldHash;
-        reload.type = Action.Reload;
-        let message = JSON.stringify(reload);
-        ws.send(message);
-        return;
+        console.warn(
+          `Warning: client is out-of-sync: their hash ${action.worldHash} != ours ${worldHash}. Continuing without forced reload.`
+        );
       }
       switch (action.type) {
         case Action.Create:
