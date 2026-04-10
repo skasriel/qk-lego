@@ -4,18 +4,16 @@ import { Provider } from 'react-redux';
 import Builder from './components/Builder.jsx';
 import './styles/app.css';
 
-import { createStore } from 'redux';
+import { configureStore } from '@reduxjs/toolkit';
 
 import reducer from './reducer';
 
 function setupStore(initialState) {
-  return createStore(
+  return configureStore({
     reducer,
-    initialState,
-    window.__REDUX_DEVTOOLS_EXTENSION__ && import.meta.env.DEV
-      ? window.__REDUX_DEVTOOLS_EXTENSION__()
-      : (f) => f
-  );
+    preloadedState: initialState,
+    devTools: import.meta.env.DEV,
+  });
 }
 
 const store = setupStore();
