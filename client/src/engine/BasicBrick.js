@@ -38,7 +38,7 @@ export class BasicBrick extends Brick {
       // Try without the parts/ prefix since loader adds it
       const partPath = `${brickID}.dat`;
 
-      console.log(`Attempting to load LDraw model: /ldraw/parts/${partPath}`);
+      console.log(`Attempting to load LDraw model: ${partPath}`);
 
       loader.load(
         partPath,
@@ -63,7 +63,6 @@ export class BasicBrick extends Brick {
         },
         (error) => {
           console.error(`Failed to load LDraw model for ${brickID}:`, error);
-          console.error(`Tried to load from: /ldraw/parts/${partPath}`);
           resolve(null);
         }
       );
@@ -114,7 +113,7 @@ export class BasicBrick extends Brick {
   static async createFromDAT(brickID, color, colorType) {
     console.log(`BasicBrick.createFromDAT with ${brickID}`);
 
-    // Load LDraw model FIRST, before creating the brick
+    // Load LDraw model first, before creating the brick
     const ldrawModel = await BasicBrick.loadLDrawModel(brickID, color, colorType);
 
     if (!ldrawModel) {
