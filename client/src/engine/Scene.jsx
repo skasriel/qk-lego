@@ -84,30 +84,28 @@ class Scene extends React.Component {
         console.log('Added new brick because server told us to '); //+JSON.stringify(brick));
         break;
       case Action.Delete:
-        let brickToDelete = this.bricks.find((brick) => {
-          return brick._uuid == action.uuid;
-        });
+        let brickToDelete = this.findBrickInModel(action.uuid);
         console.log(`Server instructed me to delete brick ${action.uuid}`); //, found as ${brickToDelete}`);
         this._deleteBrick(brickToDelete);
         break;
       case Action.Move:
-        let brickToMove = this.bricks.find((brick) => {
-          return brick._uuid == action.brick.uuid;
-        });
+        let brickToMove = this.findBrickInModel(action.brick.uuid);
         console.log(`Server instructed me to move brick ${action.brick.uuid}`); //, found as ${brickToDelete}`);
         brickToMove.position.clone(action.brick.position); // TODO: also move ghost?
         break;
       case Action.Reload:
         console.log(`Server instructed me to do a full reload`);
-        for (let i = 0; i < this.bricks.length; i++) {
-          this.bricks[i].removeFromScene(this.scene, this.ghostScene);
+        // Remove all bricks from scene
+        const allBricks = this.getAllBricks();
+        for (let i = 0; i < allBricks.length; i++) {
+          allBricks[i].removeFromScene(this.scene, this.ghostScene);
         }
-        this.bricks = [];
+        this.worldModel = { type: 'model', name: 'Scene', children: [] };
         this.ghostBricks = [];
         let array = action.world;
         console.log(`Loading ${array.length} bricks`);
         // Load all bricks in parallel and wait for completion
-        const loadPromises = array.map(state => this.createAndAddBrickFromObject(state));
+        const loadPromises = array.map((state) => this.createAndAddBrickFromObject(state));
         await Promise.all(loadPromises);
         this._renderScene();
         break;
@@ -188,23 +186,29 @@ class Scene extends React.Component {
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
     this.ghostScene = new THREE.Scene();
-    this.bricks = [];
+    this.worldModel = { type: 'model', name: 'Scene', children: [] };
     this.ghostBricks = [];
+  }
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setClearColor(0xffffff);
-    renderer.setPixelRatio(1);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+  // Helper to get flat list of all bricks from model tree
+  getAllBricks() {
+    const bricks = [];
+    const traverse = (node) => {
+      if (!node) return;
+      if (node.type === 'brick') {
+        bricks.push(node);
+      } else if (node.type === 'model' && node.children) {
+        node.children.forEach(traverse);
+      }
+    };
+    traverse(this.worldModel);
+    return bricks;
+  }
 
-    if (USE_SHADOWS) {
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMapSoft = true;
-      renderer.shadowMap.type = THREE.PCFShadowMap;
-    }
-    this.renderer = renderer;
-    this.modeSetup(null);
-    this.mount.appendChild(this.renderer.domElement);
+  // Helper to find brick by UUID in model tree
+  findBrickInModel(uuid) {
+    const bricks = this.getAllBricks();
+    return bricks.find((b) => b._uuid === uuid);
   }
 
   modeSetup(prevMode) {
@@ -370,7 +374,7 @@ class Scene extends React.Component {
       await this._rollOverBrickPromise;
       return { brick: this.rollOverBrick, block: this.rollOverGhostBlock };
     }
-    
+
     if (!this.rollOverBrick) {
       const { brickID, brickColor, colorType } = this.props;
       this._rollOverBrickPromise = (async () => {
@@ -412,7 +416,7 @@ class Scene extends React.Component {
 
     // Use actual brick models for intersection, not ghost boxes
     // This allows accurate clicking on L-shaped bricks, etc.
-    var intersectArray = [...this.bricks.map((b) => b.getModel()), this.ghostPlane];
+    var intersectArray = [...this.getAllBricks().map((b) => b.getModel()), this.ghostPlane];
     const { mode } = this.props;
     if (mode === Modes.Move && this.isBrickSelected) {
       // remove the brick we're moving from the raycaster
@@ -440,8 +444,9 @@ class Scene extends React.Component {
     // Use Three.js raycasting to check if the new brick's geometry intersects existing bricks.
     const rollOverMesh = rollOverBrick.getModel();
 
-    for (var i = 0; i < this.bricks.length; i++) {
-      const existingBrick = this.bricks[i];
+    const allBricks = this.getAllBricks();
+    for (var i = 0; i < allBricks.length; i++) {
+      const existingBrick = allBricks[i];
       const existingMesh = existingBrick.getModel();
 
       // Quick bounding box check first (for performance)
@@ -523,8 +528,9 @@ class Scene extends React.Component {
    */
   getWorldSignature() {
     let arrayOfBricks = [];
-    for (let i in this.bricks) {
-      let state = this.bricks[i].save();
+    const allBricks = this.getAllBricks();
+    for (let i = 0; i < allBricks.length; i++) {
+      let state = allBricks[i].save();
       // Normalize for consistent hashing - round positions to avoid floating point errors
       const normalized = {
         uuid: state.uuid,
@@ -558,7 +564,7 @@ class Scene extends React.Component {
     // Ignore mouse moves not on canvas or in UI areas
     if (event.target.localName !== 'canvas') return;
     if (event.clientY > window.innerHeight - 180) return;
-    
+
     const { mode } = this.props; // edit vs draw
 
     // Ensure rollover brick exists
@@ -648,13 +654,13 @@ class Scene extends React.Component {
   _onMouseUp(event) {
     // Ignore clicks not on canvas
     if (event.target.localName !== 'canvas') return;
-    
+
     // Ignore clicks in UI areas (brick picker at bottom, etc.)
     // Brick picker is ~180px tall at bottom
     if (event.clientY > window.innerHeight - 180) {
       return;
     }
-    
+
     event.preventDefault();
     const { mode } = this.props;
     const { drag } = this.state;
@@ -746,22 +752,32 @@ class Scene extends React.Component {
     // Ignore clicks not on canvas or in UI areas
     if (event.target.localName !== 'canvas') return;
     if (event.clientY > window.innerHeight - 180) return;
-    
+
     this.setState({
       drag: false,
     });
   }
 
   _deleteBrick(brick) {
-    // intersect.object is the ghost box (or the ghost plane), need to delete it and its matching brick
-    let ghost = brick.ghostBlock;
     let brickModel = brick.getModel();
     brick.removeFromScene(this.scene, this.ghostScene);
     console.log('Deleting brick: ' + brickModel.name);
-    //brick.geometry.dispose();
-    this.bricks = this.bricks.filter((value) => {
-      return value !== brick;
-    });
+    // Remove from model tree
+    const removeFromModel = (model, targetBrick) => {
+      if (!model || !model.children) return false;
+      const initialLength = model.children.length;
+      model.children = model.children.filter((child) => {
+        if (child.type === 'brick' && child === targetBrick) {
+          return false;
+        } else if (child.type === 'model') {
+          removeFromModel(child, targetBrick);
+          return true;
+        }
+        return true;
+      });
+      return model.children.length < initialLength;
+    };
+    removeFromModel(this.worldModel, brick);
     this.ghostBricks = this.ghostBricks.filter((value) => {
       return value !== ghost;
     });
@@ -1011,7 +1027,8 @@ class Scene extends React.Component {
 
   _setupNewBrick(brick) {
     brick.addToScene(this.scene, this.ghostScene);
-    this.bricks.push(brick);
+    // Add to world model
+    this.worldModel.children.push(brick);
     let ghostBrick = brick.ghostBlock;
     this.ghostBricks.push(ghostBrick);
     this._needsRendering = true;
@@ -1020,8 +1037,9 @@ class Scene extends React.Component {
   _saveState() {
     // saves to localStorage (no longer useful!).
     let arrayOfBricks = [];
-    for (let i in this.bricks) {
-      let state = this.bricks[i].save();
+    const allBricks = this.getAllBricks();
+    for (let i = 0; i < allBricks.length; i++) {
+      let state = allBricks[i].save();
       arrayOfBricks.push(state);
     }
     let objectToSave = {

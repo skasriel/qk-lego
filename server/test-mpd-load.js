@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { bricksToMPD, mpdToBricks, parseMPD, flattenModel } = require('./mpd-utils');
+const { bricksToMPD, mpdToBricks, parseMPD } = require('./mpd-utils');
 
 function assert(condition, message) {
   if (!condition) {

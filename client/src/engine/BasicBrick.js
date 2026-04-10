@@ -87,7 +87,7 @@ export class BasicBrick extends Brick {
     // This way the scale/rotation doesn't get saved in the brick's transform
     const wrapper = new THREE.Group();
     model = wrapper;
-    
+
     const ldrawGroup = preloadedLDrawModel;
     // Create a simple box for ghost (will be replaced once in scene)
     geo = new THREE.BoxGeometry(width * multX, height * multY, depth * multZ);
@@ -98,7 +98,7 @@ export class BasicBrick extends Brick {
     const scaleY = 99.9 / 24;
     ldrawGroup.scale.set(scaleXZ, scaleY, scaleXZ);
     ldrawGroup.rotation.x = Math.PI; // Flip upright (studs on top) - LDraw Y is down in file
-    
+
     wrapper.add(ldrawGroup);
 
     super(brickID, color, colorType, model);

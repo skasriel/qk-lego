@@ -32,19 +32,25 @@ export class Brick {
     // Extract 3x3 rotation and transpose from column-major to row-major
     let state = {
       uuid: this._uuid,
-      position: { 
-        x: Math.round(this.model.position.x), 
-        y: Math.round(this.model.position.y), 
-        z: Math.round(this.model.position.z) 
+      position: {
+        x: Math.round(this.model.position.x),
+        y: Math.round(this.model.position.y),
+        z: Math.round(this.model.position.z),
       },
       color: this.color,
       colorType: this.colorType,
       brickID: this._brickID,
       angle: this._angle,
       rotationMatrix: [
-        me[0], me[4], me[8],   // First row (was first column)
-        me[1], me[5], me[9],   // Second row (was second column)
-        me[2], me[6], me[10],  // Third row (was third column)
+        me[0],
+        me[4],
+        me[8], // First row (was first column)
+        me[1],
+        me[5],
+        me[9], // Second row (was second column)
+        me[2],
+        me[6],
+        me[10], // Third row (was third column)
       ],
     };
     return state;

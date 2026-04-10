@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const http = require('http');
-const { bricksToMPD, parseMPD, normalizeBricksToFloor, flattenModel } = require('./mpd-utils');
+const { bricksToMPD, parseMPD, normalizeBricksToFloor } = require('./mpd-utils');
 
 // Enable JSON parsing for POST requests
 app.use(express.json());
@@ -103,6 +103,7 @@ function loadWorldFromDisk() {
       console.log(`Incorrect file version ${worldObject.version}, expected ${FILE_VERSION_CURRENT}`);
       return;
     }
+    // Convert flat array to model for backward compatibility
     worldModel = {
       type: 'model',
       name: 'Current World',
@@ -128,8 +129,7 @@ function persistWorld() {
   return response;
 }
 function saveWorldToDisk() { // TODO: use async version of writeFile
-  const flatBricks = flattenModel(worldModel);
-  const mpdContent = bricksToMPD(flatBricks, 'Current World');
+  const mpdContent = bricksToMPD(bricks, 'Current World');
   fs.writeFileSync(worldFileName.replace('.json', '.mpd'), mpdContent);
 }
 
@@ -155,7 +155,7 @@ app.get('/api/get-scene', function(req, res) {
  * Reset scene - clear all bricks
  */
 app.post('/api/reset', function(req, res) {
-  worldModel = { type: 'model', name: 'Current World', children: [] };
+  bricks = [];
   saveWorldToDisk();
   console.log('Reset scene via API - cleared all bricks');
   
@@ -187,10 +187,9 @@ app.post('/api/scenes/save', function(req, res) {
   const sceneFile = path.join(scenesDir, `${safeNameSave}.mpd`);
   
   try {
-    const flatBricks = flattenModel(worldModel);
-    const mpdContent = bricksToMPD(flatBricks, name);
+    const mpdContent = bricksToMPD(bricks, name);
     fs.writeFileSync(sceneFile, mpdContent);
-    console.log(`Saved scene "${name}" to ${sceneFile} (${flatBricks.length} bricks)`);
+    console.log(`Saved scene "${name}" to ${sceneFile} (${bricks.length} bricks)`);
     res.json({ success: true, name: name, path: safeNameSave });
   } catch (err) {
     console.error(`Failed to save scene: ${err}`);
@@ -322,14 +321,15 @@ app.get('/api/scenes/load/:name', function(req, res) {
     if (isMPD) {
       // Load MPD file
       const mpdContent = fs.readFileSync(sceneFile, 'utf8');
-      worldModel = parseMPD(mpdContent, sceneFile);
+      const loadedBricks = parseMPD(mpdContent, sceneFile);
+      bricks = normalizeBricksToFloor(loadedBricks);
       saveWorldToDisk();
       
-      console.log(`Loaded MPD scene "${name}"`);
+      console.log(`Loaded MPD scene "${name}" with ${bricks.length} bricks`);
       res.json({ 
         success: true, 
         name: name,
-        worldModel: worldModel,
+        world: bricks,
         worldHash: getWorldSignature()
       });
     } else {
@@ -340,14 +340,14 @@ app.get('/api/scenes/load/:name', function(req, res) {
       }
       
       // Load into current world
-      worldModel = sceneData.worldModel || { type: 'model', name: sceneData.name || name, children: [] };
+      bricks = sceneData.world || [];
       saveWorldToDisk();
       
-      console.log(`Loaded scene "${sceneData.name || name}"`);
+      console.log(`Loaded scene "${sceneData.name}" with ${bricks.length} bricks`);
       res.json({ 
         success: true, 
         name: sceneData.name,
-        worldModel: worldModel,
+        world: bricks,
         worldHash: getWorldSignature()
       });
     }
@@ -397,41 +397,13 @@ const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server, path: '/ws-api'});
 
 function createAndAddBrickFromObject(brick) {
-  // Add brick to world model
-  if (!worldModel.children) worldModel.children = [];
-  worldModel.children.push({ ...brick, type: 'brick' });
-  const count = countBricksInModel(worldModel);
-  console.log(`Scene now contains ${count} bricks after adding ${brick}`);
+  bricks.push(brick);
+  console.log(`Scene now contains ${bricks.length} bricks after adding ${brick}`);
   return brick;
 }
 
-function countBricksInModel(model) {
-  if (!model || !model.children) return 0;
-  let count = 0;
-  for (const child of model.children) {
-    if (child.type === 'brick') count++;
-    else if (child.type === 'model') count += countBricksInModel(child);
-  }
-  return count;
-}
-
 function getWorldSignature() {
-  // Flatten model for consistent hashing
-  const flatBricks = flattenModel(worldModel);
-  // Normalize bricks for consistent hashing
-  const normalized = flatBricks.map(b => ({
-    uuid: b.uuid,
-    position: {
-      x: Math.round(b.position.x * 1000) / 1000,
-      y: Math.round(b.position.y * 1000) / 1000,
-      z: Math.round(b.position.z * 1000) / 1000,
-    },
-    color: b.color,
-    colorType: b.colorType,
-    brickID: b.brickID,
-    angle: Math.round((b.angle || 0) * 10000) / 10000,
-  }));
-  const text = JSON.stringify(normalized);
+  const text = JSON.stringify(bricks);
   var hash = 0; // simple implementation of Java's String.hashCode();
   for (var i = 0; i < text.length; i++) {
     var char = text.charCodeAt(i);
@@ -470,22 +442,21 @@ wss.on('connection', function connection(ws) {
           break;
         case Action.Delete:
           const brickToDelete = action.uuid;
-          const numBricks = countBricksInModel(worldModel);
-          removeBrickFromModel(worldModel, brickToDelete);
+          const numBricks = bricks.length;
+          bricks = bricks.filter(function(brick, index, arr){ return brick.uuid != brickToDelete;});
           saveWorldToDisk();
-          const newCount = countBricksInModel(worldModel);
-          console.log(`Deleted brick ${JSON.stringify(brickToDelete)} because client asked us to. # bricks was ${numBricks} and now ${newCount}`);
+          console.log(`Deleted brick ${JSON.stringify(brickToDelete)} because client asked us to. # bricks was ${numBricks} and now ${bricks.length}`);
           break;
         case Action.Move:
           const brickID = action.brick.uuid;
-          let brickToMove = findBrickInModel(worldModel, brickID);
+          let brickToMove = bricks.find(brick => {return brick.uuid==brickID});
           console.log(`Moved brick ${brickID} from ${_toStringVector3D(brickToMove.position)} to ${_toStringVector3D(action.brick.position)}`);
           brickToMove.position.x = action.brick.position.x;
           brickToMove.position.y = action.brick.position.y;
           brickToMove.position.z = action.brick.position.z;
           break;
         case Action.Reset:
-          worldModel = { type: 'model', name: 'Current World', children: [] };
+          bricks = [];
           saveWorldToDisk();
           console.log("Reset scene - cleared all bricks");
           break;
