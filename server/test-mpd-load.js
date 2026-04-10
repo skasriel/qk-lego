@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { bricksToMPD, mpdToBricks, parseMPD } = require('./mpd-utils');
+const { bricksToMPD, mpdToBricks, parseMPD, flattenModel } = require('./mpd-utils');
 
 function assert(condition, message) {
   if (!condition) {
@@ -40,7 +40,8 @@ function testAllModels() {
     const filePath = path.join(modelsDir, file);
     try {
       const content = fs.readFileSync(filePath, 'utf8');
-      const parsed = parseMPD(content, filePath);
+      const model = parseMPD(content, filePath);
+      const parsed = flattenModel(model);
       results.push({ file, ok: true, count: parsed.length });
     } catch (error) {
       results.push({ file, ok: false, error: error.message });

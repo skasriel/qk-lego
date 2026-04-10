@@ -74,7 +74,7 @@ class Scene extends React.Component {
   }
 
   // Handles messages from server - typically, because another client made changes to the scene
-  _handleWSMessage(_this, message) {
+  async _handleWSMessage(_this, message) {
     // normal "this" will be WS object for some reason, so don't use!
     //console.log("Received WS message: "+JSON.stringify(message.data));
     const action = JSON.parse(message.data);
@@ -106,10 +106,9 @@ class Scene extends React.Component {
         this.ghostBricks = [];
         let array = action.world;
         console.log(`Loading ${array.length} bricks`);
-        for (let i = 0; i < array.length; i++) {
-          let state = array[i];
-          let brick = this.createAndAddBrickFromObject(state);
-        }
+        // Load all bricks in parallel and wait for completion
+        const loadPromises = array.map(state => this.createAndAddBrickFromObject(state));
+        await Promise.all(loadPromises);
         this._renderScene();
         break;
       default:
@@ -526,7 +525,20 @@ class Scene extends React.Component {
     let arrayOfBricks = [];
     for (let i in this.bricks) {
       let state = this.bricks[i].save();
-      arrayOfBricks.push(state);
+      // Normalize for consistent hashing - round positions to avoid floating point errors
+      const normalized = {
+        uuid: state.uuid,
+        position: {
+          x: Math.round(state.position.x * 1000) / 1000,
+          y: Math.round(state.position.y * 1000) / 1000,
+          z: Math.round(state.position.z * 1000) / 1000,
+        },
+        color: state.color,
+        colorType: state.colorType,
+        brickID: state.brickID,
+        angle: Math.round(state.angle * 10000) / 10000,
+      };
+      arrayOfBricks.push(normalized);
     }
     let text = JSON.stringify(arrayOfBricks);
     var hash = 0; // simple implementation of Java's String.hashCode();
@@ -596,13 +608,13 @@ class Scene extends React.Component {
 
     if (intersectObject === this.plane || intersectObject === this.ghostPlane) {
       // Place brick so its bottom sits on the floor (y=0)
-      position.y = bottomOffset;
+      position.y = Math.round(bottomOffset);
     } else {
       let intersectBox = new THREE.Box3().setFromObject(intersectObject);
       // Place brick so its bottom sits on top of the intersected object
       // Subtract knob nesting overlap so studs fit fully into holes
       const knobNesting = 56;
-      position.y = intersectBox.max.y + bottomOffset - knobNesting;
+      position.y = Math.round(intersectBox.max.y + bottomOffset - knobNesting);
     }
 
     // Snap to grid - align brick edges to grid lines

@@ -27,14 +27,25 @@ export class Brick {
   save() {
     // Ensure matrix is up to date
     this.model.updateMatrixWorld(true);
+    const me = this.model.matrixWorld.elements;
+    // Three.js stores matrices in column-major order, but we need row-major for MPD
+    // Extract 3x3 rotation and transpose from column-major to row-major
     let state = {
       uuid: this._uuid,
-      position: this.model.position,
+      position: { 
+        x: Math.round(this.model.position.x), 
+        y: Math.round(this.model.position.y), 
+        z: Math.round(this.model.position.z) 
+      },
       color: this.color,
       colorType: this.colorType,
       brickID: this._brickID,
       angle: this._angle,
-      rotationMatrix: this.model.matrixWorld.elements.slice(0, 9), // Store 3x3 rotation
+      rotationMatrix: [
+        me[0], me[4], me[8],   // First row (was first column)
+        me[1], me[5], me[9],   // Second row (was second column)
+        me[2], me[6], me[10],  // Third row (was third column)
+      ],
     };
     return state;
   }
