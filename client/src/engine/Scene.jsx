@@ -289,12 +289,12 @@ class Scene extends React.Component {
         45,
         window.innerWidth / window.innerHeight,
         1,
-        worldSize / 10
+        2000 // LDraw scale: plenty for large models
       );
-      //camera.position.set(0, 100*multY, 0);
-      //this.scene.background = new THREE.Color( 0xaaaaaa );
-      camera.position.set(0, 3 * multY, -25 * multZ);
-      camera.lookAt(new THREE.Vector3(0, 3 * multY - 10, 0));
+      // LDraw Y points down, so position camera above looking down
+      camera.position.set(0, -25, 25);
+      camera.up.set(0, 0, 1); // Make Z up in camera space to match LDraw Y-down
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
       this.scene.fog = new THREE.FogExp2(0xffffff, 0.00015);
       //controls = new OrbitControls(camera, this.renderer.domElement);
       controls = new MyControl(camera, this.renderer.domElement);
@@ -344,7 +344,8 @@ class Scene extends React.Component {
         1,
         worldSize / 10
       );
-      camera.position.set(-24 * multX, 70 * multY, 20 * multZ);
+
+      camera.position.set(-12 * multX, 20 * multY, 30 * multZ);
       camera.lookAt(new THREE.Vector3());
       controls = new OrbitControls(camera, this.renderer.domElement);
       controls.addEventListener('change', () => (this._needsRendering = true));
@@ -722,7 +723,8 @@ class Scene extends React.Component {
       let intersectBox = new THREE.Box3().setFromObject(intersectObject);
       // Place brick so its bottom sits on top of the intersected object
       // Subtract knob nesting overlap so studs fit fully into holes
-      const knobNesting = 56;
+      // In LDU: stud is 4 LDU tall, nests into brick above
+      const knobNesting = 4;
       position.y = Math.round(intersectBox.max.y + bottomOffset - knobNesting);
     }
 

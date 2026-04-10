@@ -83,20 +83,16 @@ export class BasicBrick extends Brick {
     }
 
     // Use the preloaded LDraw model
-    // Create a wrapper group to hold the scaled model
-    // This way the scale/rotation doesn't get saved in the brick's transform
+    // Create a wrapper group to hold the model
+    // This way the rotation doesn't get saved in the brick's transform
     const wrapper = new THREE.Group();
     model = wrapper;
 
     const ldrawGroup = preloadedLDrawModel;
     // Create a simple box for ghost (will be replaced once in scene)
     geo = new THREE.BoxGeometry(width * multX, height * multY, depth * multZ);
-    // LDraw model is in LDU units (20 LDU = 1 stud, 24 LDU = 1 brick height)
-    // Our app uses: 100 units = 1 stud, 99.9 units = 1 brick height
-    // So scale by 5 for X/Z and 4.1625 for Y
-    const scaleXZ = 5;
-    const scaleY = 99.9 / 24;
-    ldrawGroup.scale.set(scaleXZ, scaleY, scaleXZ);
+    // LDraw uses Y-down, Three.js uses Y-up, so flip
+    // No scaling needed - we're using native LDU units (20 LDU = 1 stud, 24 LDU = 1 brick)
     ldrawGroup.rotation.x = Math.PI; // Flip upright (studs on top) - LDraw Y is down in file
 
     wrapper.add(ldrawGroup);

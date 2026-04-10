@@ -1,12 +1,9 @@
-export const multX = 100.0; // 1 stud = 100 units (LDraw: 20 LDU per stud, so 20*5=100)
-export const multY = 99.9 / 3; // 1 brick height = 33.3 units (LDraw: 24 LDU per brick, so 24*4.1625=99.9, divided by 3 = 33.3 per plate)
-export const multZ = 100.0; // 1 stud = 100 units
+export const multX = 20.0; // 1 stud = 20 LDU (LDraw native)
+export const multY = 24.0; // 1 brick = 24 LDU (LDraw native, Y points down)
+export const multZ = 20.0; // 1 stud = 20 LDU
+export const STUD_HEIGHT_OVERLAP = 4; // stud nests 4 LDU into brick above, so stacked height is 20+24-4=40 LDU
 
-/*
-export const brickTemplateIDs = [
-  99, 3004, 3005, 3065, 2357, 3622, 3010, 3066, 3009, 3067, 3008, 6111, 6112,
-  3003, 3002, 3001, 44237, 3006,
-];*/
+
 export const Modes = {
   Build: 'Build',
   Paint: 'Paint',
@@ -38,12 +35,6 @@ export class Action {
     this.uuid = brick._uuid;
   }
 }
-
-/*export const colorsSolid = [
-  0xF4F4F4,
-];*/
-
-//export const colors = /*Solid: */['#FF0000', '#FF9800', '#F0E100', '#00DE00', '#A1BC24', '#0011CF', '#FFFFFF', '#000000', '#652A0C' ];
 
 export class ColorCollections {
   static colorTypes = {
@@ -190,12 +181,3 @@ export function _toStringVector3D(v) {
 export function _toStringBox3(b) {
   return `Box3 [${Math.round(b.min.x)}, ${Math.round(b.min.y)}, ${Math.round(b.min.z)}] -> [${Math.round(b.max.x)}, ${Math.round(b.max.y)}, ${Math.round(b.max.z)}]`;
 }
-
-/*export function getMeasurementsFromDimensions({ x, y, z }) {
-  if (y==0) {
-    console.log("Calling getMeasurementsFromDimensions with y=0 :(");
-  }
-  return { width: multX * x, height: multY * y || (multY * 2.0) / 1.5, depth: multZ * z };
-
-  //return { width: base * x, height: base * y / 3 || (base * 2.0 / 3.0) / 1.5, depth: base * z };
-}*/

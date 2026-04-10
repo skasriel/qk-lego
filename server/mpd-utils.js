@@ -60,12 +60,8 @@ function bricksToMPD(bricks, name = 'Untitled') {
   lines.push('');
   
   // Convert each brick to MPD format
-  // App coordinates: 1 stud = 100 units X/Z, 1 brick = 99.9 units Y
-  // LDraw coordinates: 1 stud = 20 LDU X/Z, 1 brick = 24 LDU Y
-  // Conversion: app / 5 = LDU for X/Z, app / 4.1625 = LDU for Y
-  const APP_TO_LDU_XZ = 5;
-  const APP_TO_LDU_Y = 99.9 / 24; // 4.1625
-  
+  // Using native LDraw units (LDU) - no scaling needed
+  // LDraw: Y points down, our app Y points up, so flip Y
   bricks.forEach((brick, index) => {
     try {
       const color = brick.color || '#FFFFFF';
@@ -86,12 +82,11 @@ function bricksToMPD(bricks, name = 'Untitled') {
         }
       }
       
-      // Position: convert from app units to LDraw units
-      // App: 100 units = 1 stud, LDraw: 20 LDU = 1 stud
-      // So: LDU = app / 5
-      const x = (brick.position?.x || 0) / APP_TO_LDU_XZ;
-      const y = -(brick.position?.y || 0) / APP_TO_LDU_Y; // Flip Y (our Y up, LDraw Y down in file)
-      const z = (brick.position?.z || 0) / APP_TO_LDU_XZ;
+      // Position: using native LDU units (no conversion needed)
+      // Just flip Y axis (LDraw Y down, our Y up)
+      const x = (brick.position?.x || 0);
+      const y = -(brick.position?.y || 0); // Flip Y
+      const z = (brick.position?.z || 0);
       
       // Rotation matrix - use stored matrix if available, otherwise identity
       let m_a = 1, m_b = 0, m_c = 0, m_d = 0, m_e = 1, m_f = 0, m_g = 0, m_h = 0, m_i = 1;
@@ -129,8 +124,6 @@ function bricksToMPD(bricks, name = 'Untitled') {
 function mpdToBricks(mpdContent) {
   const bricks = [];
   const lines = mpdContent.split('\n');
-  const LDU_TO_APP_XZ = 5;
-  const LDU_TO_APP_Y = 99.9 / 24;
   
   for (const line of lines) {
     const trimmed = line.trim();
@@ -146,11 +139,11 @@ function mpdToBricks(mpdContent) {
       const z = parseFloat(parts[4]);
       const file = parts[14];
       
-      // Convert from LDraw units to our units
-      // LDraw: 20 LDU = 1 stud, App: 100 units = 1 stud
-      const posX = x * LDU_TO_APP_XZ;
-      const posY = -y * LDU_TO_APP_Y; // Flip Y back
-      const posZ = z * LDU_TO_APP_XZ;
+      // Using native LDraw units (LDU) - no conversion needed
+      // Just flip Y axis (LDraw Y down, our Y up)
+      const posX = x;
+      const posY = -y; // Flip Y back
+      const posZ = z;
       
       // Extract part number from filename
       const partNum = file.replace('.dat', '');
@@ -180,14 +173,13 @@ function mpdToBricks(mpdContent) {
 // LDraw → app-space conversion constants.
 // App grid: 1 stud = 100 units on X/Z, 1 brick = 99.9 units on Y.
 // LDraw:    1 stud = 20 LDU on X/Z, 1 brick = 24 LDU on Y.
-const LDU_TO_APP_XZ = 5;
-const LDU_TO_APP_Y = 99.9 / 24;
+// Using native LDU units - no conversion needed, just flip Y
 
 function ldrawToAppPoint(x, y, z) {
   return {
-    x: x * LDU_TO_APP_XZ,
-    y: -y * LDU_TO_APP_Y,
-    z: z * LDU_TO_APP_XZ,
+    x: x,
+    y: -y, // Flip Y (LDraw Y down, our Y up)
+    z: z,
   };
 }
 
@@ -469,9 +461,7 @@ function normalizeBricksToFloor(bricks) {
 function modelToMPD(model, basePath = '') {
   const fs = require('fs');
   const path = require('path');
-  const APP_TO_LDU_XZ = 5;
-  const APP_TO_LDU_Y = 99.9 / 24;
-
+  
   function closestLDrawColor(color) {
     const safe = color || '#FFFFFF';
     let ldrawColor = 0;
@@ -513,9 +503,10 @@ function modelToMPD(model, basePath = '') {
         const rot = child.transform?.rotationMatrix || child.object?.rotationMatrix || [1,0,0,0,1,0,0,0,1];
         const color = closestLDrawColor(child.object?.color);
         const partFile = child.object?.brickID ? `${child.object.brickID}.dat` : 'missing.dat';
-        const x = pos.x / APP_TO_LDU_XZ;
-        const y = -pos.y / APP_TO_LDU_Y;
-        const z = pos.z / APP_TO_LDU_XZ;
+        // Using native LDU units - just flip Y axis
+        const x = pos.x;
+        const y = -pos.y;
+        const z = pos.z;
         
         lines.push(`1 ${color} ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${partFile}`);
       } else if (child.type === 'model') {
@@ -532,9 +523,9 @@ function modelToMPD(model, basePath = '') {
 
         const pos = child.transform?.position || { x: 0, y: 0, z: 0 };
         const rot = child.transform?.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1];
-        const x = pos.x / APP_TO_LDU_XZ;
-        const y = -pos.y / APP_TO_LDU_Y;
-        const z = pos.z / APP_TO_LDU_XZ;
+        const x = pos.x;
+        const y = -pos.y;
+        const z = pos.z;
         lines.push(
           `1 16 ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${subFileName}`
         );
