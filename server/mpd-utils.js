@@ -8,44 +8,7 @@
  *   Where a-i is a 3x3 rotation matrix, and file is the part filename
  */
 
-const LDRAW_COLORS = {
-  0: '#05131D',
-  1: '#0055BF',
-  2: '#257A3E',
-  3: '#C91A09',
-  4: '#F2CD37',
-  5: '#FFFFFF',
-  6: '#F2705E',
-  7: '#9BA19D',
-  8: '#6D6E5C',
-  9: '#B4D2E3',
-  10: '#4B9F4A',
-  11: '#55A5AF',
-  12: '#F2705E',
-  13: '#FC97AC',
-  14: '#F2CD37',
-  15: '#FFFFFF',
-  16: '#FFFFFF',
-  24: '#FFFFFF',
-  40: '#C0FF00',
-  41: '#56E646',
-  42: '#C1DFF0',
-  43: '#A5A5CB',
-  47: '#FCFCFC',
-  70: '#A0A5A9',
-  71: '#6C6E68',
-  72: '#5C9DD1',
-  73: '#73DCA1',
-  74: '#FECCCF',
-  75: '#F6D7B3',
-  76: '#C870A0',
-  77: '#3F3691',
-  78: '#923978',
-  84: '#A95500',
-  85: '#E6E3DA',
-  92: '#C91A09',
-  288: '#05131D',
-};
+const { LDRAW_COLORS } = require('../shared/constants.js');
 
 // Convert our internal brick format to MPD
 function bricksToMPD(bricks, name = 'Untitled') {

@@ -12,6 +12,11 @@ import { MyControl } from './MyControl';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 
 import { multX, multY, multZ, _toStringBox3, _toStringVector3D } from '../util';
+import {
+  composeTransform,
+  normalizeNodeForHash,
+  getWorldHash,
+} from '../../../shared/transforms.js';
 import { Modes, Action } from '../util';
 
 const If = ({ cond, children }) => (cond ? children : null);
@@ -245,34 +250,6 @@ class Scene extends React.Component {
       position: state.position,
       rotationMatrix: state.rotationMatrix,
     };
-  }
-
-  composeTransform(parentTransform, childTransform) {
-    const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];
-    const pRot = parentTransform?.rotationMatrix || identity;
-    const pPos = parentTransform?.position || { x: 0, y: 0, z: 0 };
-    const cRot = childTransform?.rotationMatrix || identity;
-    const cPos = childTransform?.position || { x: 0, y: 0, z: 0 };
-
-    const rot = [
-      pRot[0] * cRot[0] + pRot[1] * cRot[3] + pRot[2] * cRot[6],
-      pRot[0] * cRot[1] + pRot[1] * cRot[4] + pRot[2] * cRot[7],
-      pRot[0] * cRot[2] + pRot[1] * cRot[5] + pRot[2] * cRot[8],
-      pRot[3] * cRot[0] + pRot[4] * cRot[3] + pRot[5] * cRot[6],
-      pRot[3] * cRot[1] + pRot[4] * cRot[4] + pRot[5] * cRot[7],
-      pRot[3] * cRot[2] + pRot[4] * cRot[5] + pRot[5] * cRot[8],
-      pRot[6] * cRot[0] + pRot[7] * cRot[3] + pRot[8] * cRot[6],
-      pRot[6] * cRot[1] + pRot[7] * cRot[4] + pRot[8] * cRot[7],
-      pRot[6] * cRot[2] + pRot[7] * cRot[5] + pRot[8] * cRot[8],
-    ];
-
-    const pos = {
-      x: pRot[0] * cPos.x + pRot[1] * cPos.y + pRot[2] * cPos.z + pPos.x,
-      y: pRot[3] * cPos.x + pRot[4] * cPos.y + pRot[5] * cPos.z + pPos.y,
-      z: pRot[6] * cPos.x + pRot[7] * cPos.y + pRot[8] * cPos.z + pPos.z,
-    };
-
-    return { position: pos, rotationMatrix: rot };
   }
 
   modeSetup(prevMode) {
@@ -593,72 +570,7 @@ class Scene extends React.Component {
    * Obviously the server needs to compute hashes with the same algorithm!
    */
   getWorldSignature() {
-    const identityTransform = {
-      position: { x: 0, y: 0, z: 0 },
-      rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    };
-    const normalizeNodeForHash = (node, parentTransform = null) => {
-      if (!node) return null;
-
-      if (node instanceof Model) {
-        return {
-          type: 'model',
-          name: node.name,
-          children: (node.children || []).map((child) => normalizeNodeForHash(child, parentTransform)),
-        };
-      }
-
-      if (node.type === 'brick') {
-        const brick = node.object;
-        const transform = this.composeTransform(
-          parentTransform,
-          node.transform || {
-            position: brick.save().position,
-            rotationMatrix: brick.save().rotationMatrix,
-          }
-        );
-        const brickState = brick.save();
-        const pos = transform.position || brickState.position || { x: 0, y: 0, z: 0 };
-        return {
-          type: 'brick',
-          uuid: brickState.uuid,
-          brickID: brickState.brickID,
-          color: brickState.color,
-          colorType: brickState.colorType,
-          position: {
-            x: Math.round(pos.x * 1000) / 1000,
-            y: Math.round(pos.y * 1000) / 1000,
-            z: Math.round(pos.z * 1000) / 1000,
-          },
-          rotationMatrix:
-            transform.rotationMatrix || brickState.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1],
-        };
-      }
-
-      if (node.type === 'model') {
-        const model = node.object || node;
-        const modelTransform = node.object
-          ? this.composeTransform(parentTransform, node.transform || identityTransform)
-          : parentTransform;
-        return {
-          type: 'model',
-          name: model.name,
-          children: (model.children || []).map((child) => normalizeNodeForHash(child, modelTransform)),
-        };
-      }
-
-      return null;
-    };
-
-    let text = JSON.stringify(normalizeNodeForHash(this.worldModel));
-    var hash = 0; // simple implementation of Java's String.hashCode();
-    for (var i = 0; i < text.length; i++) {
-      var char = text.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    //console.log(`getWorldSignature is ${hash} for ${text}`);
-    return hash;
+    return getWorldHash(this.worldModel);
   }
 
   /**
@@ -1129,7 +1041,7 @@ class Scene extends React.Component {
     for (const child of children) {
       if (child.type === 'brick') {
         const brickState = child.object || child;
-        const transform = this.composeTransform(parentTransform, child.transform || {});
+        const transform = composeTransform(parentTransform, child.transform || {});
         const brick = await BasicBrick.load({
           ...brickState,
           position: transform.position || brickState.position,
@@ -1143,7 +1055,7 @@ class Scene extends React.Component {
         await this.loadWorldModel(
           childModelData,
           runtimeModel,
-          this.composeTransform(parentTransform, child.transform || {})
+          composeTransform(parentTransform, child.transform || {})
         );
       }
     }

@@ -3,6 +3,8 @@ const path = require('path');
 const app = express();
 const http = require('http');
 const { parseMPD, modelToMPD } = require('./mpd-utils');
+const { Action } = require('../shared/constants.js');
+const { composeTransform, normalizeNodeForHash, getWorldHash, countBricksInModel, findBrickInModel, removeBrickFromModel } = require('../shared/transforms.js');
 
 // Enable JSON parsing for POST requests
 app.use(express.json());
@@ -65,15 +67,6 @@ db.world = new Datastore({
 
 const FILE_VERSION_CURRENT = 1.4;
 let worldModel = { type: 'model', name: 'Current World', children: [] };
-
-class Action {
-  static Create = 'Create';
-  static Delete = 'Delete';
-  static Move = 'Move';
-  static Clone = 'Clone';
-  static Reload = 'Reload';
-  static Reset = 'Reset';
-}
 
 const fs = require('fs');
 const dataDir = process.env.PLATFORM_APP_DIR ? path.join(process.env.PLATFORM_APP_DIR, 'data') : path.join(__dirname, '..');
@@ -402,163 +395,6 @@ function createAndAddBrickFromObject(brick) {
   const count = countBricksInModel(worldModel);
   console.log(`Scene now contains ${count} bricks after adding ${brick}`);
   return brick;
-}
-
-function countBricksInModel(model) {
-  if (!model || !model.children) return 0;
-  let count = 0;
-  for (const child of model.children) {
-    if (child.type === 'brick') count++;
-    else if (child.type === 'model') count += countBricksInModel(child.object || child);
-  }
-  return count;
-}
-
-function findBrickInModel(model, uuid) {
-  if (!model || !model.children) return null;
-  for (const child of model.children) {
-    if (child.type === 'brick' && child.object?.uuid === uuid) {
-      return child.object;
-    }
-    if (child.type === 'model') {
-      const found = findBrickInModel(child.object || child, uuid);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-function removeBrickFromModel(model, uuid) {
-  if (!model || !model.children) return false;
-  let removed = false;
-  model.children = model.children.filter((child) => {
-    if (child.type === 'brick' && child.object?.uuid === uuid) {
-      removed = true;
-      return false;
-    }
-    if (child.type === 'model') {
-      const childModel = child.object || child;
-      if (removeBrickFromModel(childModel, uuid)) removed = true;
-    }
-    return true;
-  });
-  return removed;
-}
-
-function composeTransform(parentTransform, childTransform) {
-  const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];
-  const pRot = parentTransform?.rotationMatrix || identity;
-  const pPos = parentTransform?.position || { x: 0, y: 0, z: 0 };
-  const cRot = childTransform?.rotationMatrix || identity;
-  const cPos = childTransform?.position || { x: 0, y: 0, z: 0 };
-
-  const rot = [
-    pRot[0] * cRot[0] + pRot[1] * cRot[3] + pRot[2] * cRot[6],
-    pRot[0] * cRot[1] + pRot[1] * cRot[4] + pRot[2] * cRot[7],
-    pRot[0] * cRot[2] + pRot[1] * cRot[5] + pRot[2] * cRot[8],
-    pRot[3] * cRot[0] + pRot[4] * cRot[3] + pRot[5] * cRot[6],
-    pRot[3] * cRot[1] + pRot[4] * cRot[4] + pRot[5] * cRot[7],
-    pRot[3] * cRot[2] + pRot[4] * cRot[5] + pRot[5] * cRot[8],
-    pRot[6] * cRot[0] + pRot[7] * cRot[3] + pRot[8] * cRot[6],
-    pRot[6] * cRot[1] + pRot[7] * cRot[4] + pRot[8] * cRot[7],
-    pRot[6] * cRot[2] + pRot[7] * cRot[5] + pRot[8] * cRot[8],
-  ];
-
-  const pos = {
-    x: pRot[0] * cPos.x + pRot[1] * cPos.y + pRot[2] * cPos.z + pPos.x,
-    y: pRot[3] * cPos.x + pRot[4] * cPos.y + pRot[5] * cPos.z + pPos.y,
-    z: pRot[6] * cPos.x + pRot[7] * cPos.y + pRot[8] * cPos.z + pPos.z,
-  };
-
-  return { position: pos, rotationMatrix: rot };
-}
-
-function normalizeNodeForHash(node, parentTransform = null) {
-  if (!node) return null;
-  const identityTransform = {
-    position: { x: 0, y: 0, z: 0 },
-    rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-  };
-  if (node.type === 'brick') {
-    const brick = node.object || node;
-    const transform = composeTransform(parentTransform, node.transform || {
-      position: brick.position,
-      rotationMatrix: brick.rotationMatrix,
-    });
-    const pos = transform.position || brick.position || { x: 0, y: 0, z: 0 };
-    return {
-      type: 'brick',
-      uuid: brick.uuid,
-      brickID: brick.brickID,
-      color: brick.color,
-      colorType: brick.colorType,
-      position: {
-        x: Math.round(pos.x * 1000) / 1000,
-        y: Math.round(pos.y * 1000) / 1000,
-        z: Math.round(pos.z * 1000) / 1000,
-      },
-      rotationMatrix: transform.rotationMatrix || brick.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    };
-  }
-  const childModel = node.object || node;
-  const modelTransform = node.type === 'model' && node.object ? composeTransform(parentTransform, node.transform || identityTransform) : parentTransform;
-  return {
-    type: 'model',
-    name: childModel.name,
-    children: (childModel.children || []).map((child) => normalizeNodeForHash(child, modelTransform)),
-  };
-}
-
-function sceneDataToModel(data, fallbackName = 'Current World') {
-  if (Array.isArray(data)) {
-    return {
-      type: 'model',
-      name: fallbackName,
-      children: data.map((brick) => ({
-        type: 'brick',
-        object: brick,
-        transform: {
-          position: brick.position,
-          rotationMatrix: brick.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1],
-        },
-      })),
-    };
-  }
-  if (!data) {
-    return { type: 'model', name: fallbackName, children: [] };
-  }
-  if (data.type === 'model') {
-    return {
-      type: 'model',
-      name: data.name || fallbackName,
-      children: (data.children || []).map((child) => {
-        if (child.type === 'brick') {
-          const brick = child.object || child;
-          return {
-            type: 'brick',
-            object: brick,
-            transform: child.transform || {
-              position: brick.position,
-              rotationMatrix: brick.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1],
-            },
-          };
-        }
-        if (child.type === 'model') {
-          const model = child.object || child;
-          return {
-            type: 'model',
-            object: sceneDataToModel(model, model.name || fallbackName),
-            transform: child.transform || {
-              position: { x: 0, y: 0, z: 0 },
-              rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-            },
-          };
-        }
-        return child;
-      }),
-    };
-  }
-  return { type: 'model', name: fallbackName, children: [] };
 }
 
 function collectSubmodelFiles(filePath, seen = new Set()) {

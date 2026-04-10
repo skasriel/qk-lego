@@ -19,15 +19,14 @@ export class Model {
     this.children.push({
       type: 'brick',
       object: brick,
-      transform:
-        transform || {
-          position: {
-            x: brick.getModel().position.x,
-            y: brick.getModel().position.y,
-            z: brick.getModel().position.z,
-          },
-          rotationMatrix: brick.save().rotationMatrix,
+      transform: transform || {
+        position: {
+          x: brick.getModel().position.x,
+          y: brick.getModel().position.y,
+          z: brick.getModel().position.z,
         },
+        rotationMatrix: brick.save().rotationMatrix,
+      },
     });
   }
 
@@ -35,11 +34,10 @@ export class Model {
     this.children.push({
       type: 'model',
       object: model,
-      transform:
-        transform || {
-          position: { x: model.position.x, y: model.position.y, z: model.position.z },
-          rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-        },
+      transform: transform || {
+        position: { x: model.position.x, y: model.position.y, z: model.position.z },
+        rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+      },
     });
   }
 
