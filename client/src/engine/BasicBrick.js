@@ -1,8 +1,12 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { LDrawLoader } from 'three/examples/jsm/loaders/LDrawLoader.js';
+import { LDrawConditionalLineMaterial } from 'three/examples/jsm/materials/LDrawConditionalLineMaterial.js';
 import { multX, multY, multZ } from '../util';
 import { Brick } from './Brick';
+
+// Set default for all LDrawLoader instances (required for three.js 0.183+)
+LDrawLoader.prototype.ConditionalLineMaterial = LDrawConditionalLineMaterial;
 
 const USE_SHADOWS = false;
 let staticCounter = 0;
@@ -16,6 +20,12 @@ function getLDrawLoader() {
     lDrawLoader.setPath('/ldraw/parts/');
     // setPartsLibraryPath controls where fetchData() looks for sub-parts
     lDrawLoader.setPartsLibraryPath('/ldraw/');
+    // Required for three.js 0.183+ - set conditional line material
+    console.log('LDrawConditionalLineMaterial import:', LDrawConditionalLineMaterial);
+    console.log('Type:', typeof LDrawConditionalLineMaterial);
+    lDrawLoader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
+    console.log('After set, loader.ConditionalLineMaterial:', lDrawLoader.ConditionalLineMaterial);
+    console.log('Are they equal?', lDrawLoader.ConditionalLineMaterial === LDrawConditionalLineMaterial);
   }
   return lDrawLoader;
 }
@@ -38,7 +48,7 @@ export class BasicBrick extends Brick {
       // Try without the parts/ prefix since loader adds it
       const partPath = `${brickID}.dat`;
 
-      console.log(`Attempting to load LDraw model: /ldraw/parts/${partPath}`);
+      console.log(`Attempting to load LDraw model: ${partPath}`);
 
       loader.load(
         partPath,
@@ -63,7 +73,6 @@ export class BasicBrick extends Brick {
         },
         (error) => {
           console.error(`Failed to load LDraw model for ${brickID}:`, error);
-          console.error(`Tried to load from: /ldraw/parts/${partPath}`);
           resolve(null);
         }
       );
@@ -114,7 +123,7 @@ export class BasicBrick extends Brick {
   static async createFromDAT(brickID, color, colorType) {
     console.log(`BasicBrick.createFromDAT with ${brickID}`);
 
-    // Load LDraw model FIRST, before creating the brick
+    // Load LDraw model first, before creating the brick
     const ldrawModel = await BasicBrick.loadLDrawModel(brickID, color, colorType);
 
     if (!ldrawModel) {

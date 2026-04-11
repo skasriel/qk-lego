@@ -209,11 +209,24 @@ function ldrawPartExists(file) {
   const fs = require('fs');
   const path = require('path');
   const normalized = file.replace(/\\/g, '/');
+  const lowerNormalized = normalized.toLowerCase();
+  const lowerFile = file.toLowerCase();
+  
   const candidates = [
+    // Original paths
     path.join(__dirname, 'ldraw', 'parts', normalized),
     path.join(__dirname, 'ldraw', 'p', normalized),
     path.join(__dirname, 'ldraw', 'parts', 's', normalized),
     path.join(__dirname, 'ldraw', normalized),
+    // Case-insensitive variants
+    path.join(__dirname, 'ldraw', 'parts', lowerNormalized),
+    path.join(__dirname, 'ldraw', 'p', lowerNormalized),
+    path.join(__dirname, 'ldraw', 'parts', 's', lowerNormalized),
+    // Also try original file with different case
+    path.join(__dirname, 'ldraw', 'parts', file),
+    path.join(__dirname, 'ldraw', 'p', file),
+    path.join(__dirname, 'ldraw', 'parts', lowerFile),
+    path.join(__dirname, 'ldraw', 'p', lowerFile),
   ];
   return candidates.some((candidate) => fs.existsSync(candidate));
 }
@@ -320,16 +333,33 @@ function parseModelContent(
             },
           });
         } else {
-          const subPath = path.join(path.dirname(basePath), file);
+          const normalizedFile = file.replace(/\\/g, '/');
+          const subPath = path.join(path.dirname(basePath), normalizedFile);
+          const subPathLower = path.join(path.dirname(basePath), normalizedFile.toLowerCase());
+          
+          let actualPath = null;
           if (fs.existsSync(subPath)) {
-            const subContent = fs.readFileSync(subPath, 'utf8');
+            actualPath = subPath;
+          } else if (fs.existsSync(subPathLower)) {
+            actualPath = subPathLower;
+          } else {
+            // Try without s\ prefix if present
+            const withoutSPrefix = normalizedFile.replace(/^s\//i, '');
+            const tryPath = path.join(path.dirname(basePath), withoutSPrefix);
+            if (fs.existsSync(tryPath)) {
+              actualPath = tryPath;
+            }
+          }
+          
+          if (actualPath) {
+            const subContent = fs.readFileSync(actualPath, 'utf8');
             const externalSections = splitMPDSections(subContent, file);
             const rootName = externalSections.keys().next().value || file;
             const subModel = parseModelContent(
               externalSections.get(rootName),
               rootName,
               externalSections,
-              subPath,
+              actualPath,
               depth + 1,
               maxDepth,
               resolvedColor

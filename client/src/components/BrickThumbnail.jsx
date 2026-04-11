@@ -1,6 +1,10 @@
 import React from 'react';
 import * as THREE from 'three';
 import { LDrawLoader } from 'three/examples/jsm/loaders/LDrawLoader.js';
+import { LDrawConditionalLineMaterial } from 'three/examples/jsm/materials/LDrawConditionalLineMaterial.js';
+
+// Set default for all LDrawLoader instances (required for three.js 0.183+)
+LDrawLoader.prototype.ConditionalLineMaterial = LDrawConditionalLineMaterial;
 
 let sharedRenderer = null;
 let sharedScene = null;
@@ -40,6 +44,8 @@ function getLDrawLoader() {
     lDrawLoader = new LDrawLoader();
     lDrawLoader.setPath('/ldraw/parts/');
     lDrawLoader.setPartsLibraryPath('/ldraw/');
+    // Required for three.js 0.183+
+    lDrawLoader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
   }
   return lDrawLoader;
 }

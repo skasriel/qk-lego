@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { bricksToMPD, mpdToBricks, parseMPD } = require('./mpd-utils');
+const { bricksToMPD, mpdToBricks, parseMPD } = require('../server/mpd-utils');
 
 function countBricks(node) {
   if (!node) return 0;
@@ -41,7 +41,7 @@ function testRoundTrip() {
 }
 
 function testAllModels() {
-  const modelsDir = path.join(__dirname, 'models');
+  const modelsDir = path.join(__dirname, '../server/models');
   const files = fs
     .readdirSync(modelsDir)
     .filter((f) => f.endsWith('.mpd') || f.endsWith('.ldr'))

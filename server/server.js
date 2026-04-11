@@ -19,6 +19,12 @@ app.use('/ldraw', (req, res, next) => {
   req.url = req.url.replace(/\/p\/parts\//g, '/parts/');
   // Fix 'models/parts/' path issue from LDrawLoader  
   req.url = req.url.replace(/\/models\/parts\//g, '/parts/');
+  // Fix 'parts/p/' path issue - files are in /p/, not /parts/p/
+  req.url = req.url.replace(/\/parts\/p\//g, '/p/');
+  // Fix 'p/p/' path issue - from double transformation
+  req.url = req.url.replace(/\/p\/p\//g, '/p/');
+  // Fix 'models/p/' path issue
+  req.url = req.url.replace(/\/models\/p\//g, '/p/');
   next();
 }, express.static(path.join(__dirname, 'ldraw')), (req, res, next) => {
   // Fallback: try alternative locations for LDraw files

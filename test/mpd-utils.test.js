@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Import the functions to test
-const { bricksToMPD, mpdToBricks } = require('./mpd-utils');
+const { bricksToMPD, mpdToBricks } = require('../server/mpd-utils');
 
 describe('MPD Format Tests', () => {
   test('bricksToMPD creates valid MPD format', () => {
