@@ -6,6 +6,3 @@ server/ldraw/
 scenes/
 client/package.json.cra.backup
 world.mpd
-test/test-output/
-*.mpd.backup
-*.mpd.old*
