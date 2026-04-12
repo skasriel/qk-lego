@@ -1,0 +1,15 @@
+0 Main2
+0 Name: Main2.mpd
+0 Author: QK Lego Builder
+0 !LDRAW_ORG Unofficial_Model
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 frame.mpd
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 flex.mpd
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 door.mpd
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 Elevator.mpd
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 beds.mpd
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 bwheel.mpd
+1 16 1160 0 -40 -1 0 0 0 1 0 0 0 -1 bwheel.mpd
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 fwheel.mpd
+1 16 160 0 -40 -1 0 0 0 1 0 0 0 -1 fwheel.mpd
+1 16 801 -139.3 -145.3 0 1 0 0 0 1 1 0 0 Action figure.mpd

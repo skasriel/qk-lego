@@ -1,0 +1,8 @@
+0 Main1
+0 Name: Main1.mpd
+0 Author: QK Lego Builder
+0 !LDRAW_ORG Unofficial_Model
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 helicopter.mpd
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 propellor.mpd
+1 16 0 -33.3 240 1 0 0 0 0.999048 0.0436194 0 -0.0436194 0.999048 Seated_figure.mpd
