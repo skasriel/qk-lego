@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { LDrawLoader } from 'three/examples/jsm/loaders/LDrawLoader.js';
+// import { LDrawLoader } from 'three/examples/jsm/loaders/LDrawLoader.js';
+import { LDrawLoader } from 'three/addons/loaders/LDrawLoader.js';
 import { LDrawConditionalLineMaterial } from 'three/examples/jsm/materials/LDrawConditionalLineMaterial.js';
 import { multX, multY, multZ } from '../util';
 import { Brick } from './Brick';

@@ -1,9 +1,9 @@
-0 y-frame
-0 Name: y-frame.mpd
+0 Y-Frame
+0 Name: Y-Frame.mpd
 0 Author: QK Lego Builder
 0 !LDRAW_ORG Unofficial_Model
 
-1 16 -130 80 0 1 0 0 0 1 0 0 0 1 dsdk.mpd
+1 16 -130 80 0 1 0 0 0 1 0 0 0 1 DSDK.mpd
 1 0 -60 -14 -70 1 0 0 0 1 0 0 0 1 2780.dat
 1 0 -20 -54 -110 0 0 -1 0 1 0 1 0 0 2780.dat
 1 0 0 -64 -120 -1 0 0 0 1 0 0 0 -1 32333.dat

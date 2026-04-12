@@ -17,7 +17,7 @@ app.use('/ldraw', (req, res, next) => {
   req.url = req.url.replace(/\/parts\/parts\//g, '/parts/');
   // Fix 'p/parts/' path issue from LDrawLoader
   req.url = req.url.replace(/\/p\/parts\//g, '/parts/');
-  // Fix 'models/parts/' path issue from LDrawLoader  
+  // Fix 'models/parts/' path issue from LDrawLoader
   req.url = req.url.replace(/\/models\/parts\//g, '/parts/');
   // Fix 'parts/p/' path issue - files are in /p/, not /parts/p/
   req.url = req.url.replace(/\/parts\/p\//g, '/p/');
@@ -31,9 +31,9 @@ app.use('/ldraw', (req, res, next) => {
   // LDraw files can be in /parts/, /p/, /parts/s/, /p/48/, etc.
   const fs = require('fs');
   const originalUrl = req.url;
-  
+
   const tryPaths = [];
-  
+
   if (originalUrl.startsWith('/parts/')) {
     const filename = originalUrl.substring('/parts/'.length);
     // Try /p/ (primitives)
@@ -47,29 +47,20 @@ app.use('/ldraw', (req, res, next) => {
       tryPaths.push(`/parts/s/${basename}`);
     }
   }
-  
+
   for (const tryPath of tryPaths) {
     const fullPath = path.join(__dirname, 'ldraw', tryPath);
     if (fs.existsSync(fullPath)) {
-      console.log(`LDraw fallback: ${originalUrl} -> ${tryPath}`);
       return res.sendFile(fullPath);
     }
   }
-  
+  console.error(`server.get/ldraw: Unable to find file: ${originalUrl}`);
   next();
 });
 
 // Serve the React client build
 app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
 
-/*const Datastore = require('nedb');
-const db = {};
-db.world = new Datastore({
-  filename: '../world.db',
-  autoload: true,
-  timestampData: true,
-  corruptAlertThreshold: 0,
-});*/
 
 const FILE_VERSION_CURRENT = 1.4;
 let worldModel = { type: 'model', name: 'Current World', children: [] };
@@ -83,36 +74,22 @@ const scenesDir = path.join(dataDir, 'scenes');
 if (!fs.existsSync(scenesDir)) {
   fs.mkdirSync(scenesDir, { recursive: true });
 }
+
+// Load the world.mpd file that contains the shared world that all clients use
 function loadWorldFromDisk() {
-  const mpdWorldFile = worldFileName.replace('.json', '.mpd');
-  if (!fs.existsSync(mpdWorldFile)) {
-    // Try legacy JSON format
-    if (!fs.existsSync(worldFileName)) {
-      console.log(`File ${worldFileName} not found -> starting from empty world`);
-      return;
-    }
-    console.log(`Loading legacy JSON world from ${worldFileName}`);
-    let worldText = fs.readFileSync(worldFileName, 'utf8');
-    if (worldText.length == 0) {
-      console.log(`Empty file ${worldFileName} -> starting from empty world`);
-      return;
-    }
-    let worldObject = JSON.parse(worldText);
-    if (worldObject.version != FILE_VERSION_CURRENT) {
-      console.log(`Incorrect file version ${worldObject.version}, expected ${FILE_VERSION_CURRENT}`);
-      return;
-    }
-    worldModel = sceneDataToModel(worldObject.worldModel || worldObject.world || []);
+  if (!fs.existsSync(worldFileName)) {
+    console.log(`File ${worldFileName} not found -> starting from empty world`);
     return;
   }
-  
+
   // Load MPD format
-  console.log(`Loading MPD world from ${mpdWorldFile}`);
-  const mpdContent = fs.readFileSync(mpdWorldFile, 'utf8');
-  worldModel = parseMPD(mpdContent, mpdWorldFile);
+  console.log(`Loading MPD world from ${worldFileName}`);
+  const mpdContent = fs.readFileSync(worldFileName, 'utf8');
+  worldModel = parseMPD(mpdContent, worldFileName);
 }
 loadWorldFromDisk();
 
+// Saves the world.mpd file based on changes made by one of the clients
 function persistWorld() {
   let response = {
     version: FILE_VERSION_CURRENT,
@@ -121,7 +98,7 @@ function persistWorld() {
   return response;
 }
 function saveWorldToDisk() { // TODO: use async version of writeFile
-  modelToMPD(worldModel, worldFileName.replace('.json', '.mpd'));
+  modelToMPD(worldModel, worldFileName);
 }
 
 app.use(function (req, res, next) { // TODO: either do something here or delete
@@ -130,9 +107,7 @@ app.use(function (req, res, next) { // TODO: either do something here or delete
   return next();
 });
 
-/**
- * Send entire scene to client - presumably a client that just connected to this server
- */
+// Send entire scene to client - presumably a client that just connected to this server
 app.get('/api/get-scene', function(req, res) {
   console.log(`Sending scene to client because they requested it`);
   let response = persistWorld();
@@ -142,14 +117,12 @@ app.get('/api/get-scene', function(req, res) {
   res.end();
 });
 
-/**
- * Reset scene - clear all bricks
- */
+// Reset scene - clear all bricks
 app.post('/api/reset', function(req, res) {
   worldModel = { type: 'model', name: 'Current World', children: [] };
   saveWorldToDisk();
   console.log('Reset scene via API - cleared all bricks');
-  
+
   // Broadcast reset to all connected clients
   const resetAction = {
     type: Action.Reset,
@@ -160,23 +133,21 @@ app.post('/api/reset', function(req, res) {
       client.send(JSON.stringify(resetAction));
     }
   });
-  
+
   res.json({ success: true });
 });
 
-/**
- * Save current scene with a name
- */
+// Save current scene with a name
 app.post('/api/scenes/save', function(req, res) {
   const { name } = req.body;
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
     return res.status(400).json({ error: 'Scene name is required' });
   }
-  
+
   // Sanitize filename
   const safeNameSave = name.trim().replace(/[^a-z0-9_\-\.]/gi, '_').substring(0, 100);
   const sceneFile = path.join(scenesDir, `${safeNameSave}.mpd`);
-  
+
   try {
     modelToMPD(worldModel, sceneFile);
     res.json({ success: true, name: name, path: safeNameSave });
@@ -186,49 +157,34 @@ app.post('/api/scenes/save', function(req, res) {
   }
 });
 
-/**
- * List all saved scenes
- */
+// List all saved scenes
 app.get('/api/scenes/list', function(req, res) {
   try {
     const scenes = [];
-    
+
     // Add user-saved scenes
     if (fs.existsSync(scenesDir)) {
       const files = fs.readdirSync(scenesDir);
       files
-        .filter(f => f.endsWith('.mpd') || f.endsWith('.json'))
+        .filter(f => f.endsWith('.mpd'))
         .forEach(f => {
           const filePath = path.join(scenesDir, f);
-          const isMPD = f.endsWith('.mpd');
           const stats = fs.statSync(filePath);
-          
-          if (isMPD) {
-            // For MPD files, count line type 1 references
-            const content = fs.readFileSync(filePath, 'utf8');
-            const brickCount = (content.match(/^1\s+/gm) || []).length;
-            const name = f.replace('.mpd', '');
-            scenes.push({
-              name: name,
-              filename: f.replace('.mpd', ''),
-              savedAt: stats.mtime.toISOString(),
-              numberBricks: brickCount,
-              type: 'user',
-            });
-          } else {
-            // Legacy JSON format
-            const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-            scenes.push({
-              name: data.name || f.replace('.json', ''),
-              filename: f.replace('.json', ''),
-              savedAt: data.savedAt,
-              numberBricks: data.numberBricks || 0,
-              type: 'user',
-            });
-          }
+
+          // For MPD files, count line type 1 references
+          const content = fs.readFileSync(filePath, 'utf8');
+          const brickCount = (content.match(/^1\s+/gm) || []).length;
+          const name = f.replace('.mpd', '');
+          scenes.push({
+            name: name,
+            filename: f.replace('.mpd', ''),
+            savedAt: stats.mtime.toISOString(),
+            numberBricks: brickCount,
+            type: 'user',
+          });
         });
     }
-    
+
     // Add pre-loaded models from server/models
     const modelsDir = path.join(__dirname, 'models');
     if (fs.existsSync(modelsDir)) {
@@ -238,7 +194,7 @@ app.get('/api/scenes/list', function(req, res) {
         const stats = fs.statSync(filePath);
         const content = fs.readFileSync(filePath, 'utf8');
         const brickCount = (content.match(/^1\s+/gm) || []).length;
-        
+
         // Extract name from MPD file (look for Name: line or use filename)
         const nameMatch = content.match(/^0\s+Name:\s*(.+?)$/m);
         let displayName = f.replace('.mpd', '');
@@ -251,7 +207,7 @@ app.get('/api/scenes/list', function(req, res) {
             displayName = firstLine.replace(/^0\s+/, '').trim();
           }
         }
-        
+
         scenes.push({
           name: displayName,
           filename: f.replace('.mpd', ''),
@@ -262,7 +218,7 @@ app.get('/api/scenes/list', function(req, res) {
         });
       });
     }
-    
+
     // Sort by type (builtin first), then by date
     scenes.sort((a, b) => {
       if (a.type !== b.type) {
@@ -270,7 +226,7 @@ app.get('/api/scenes/list', function(req, res) {
       }
       return new Date(b.savedAt) - new Date(a.savedAt);
     });
-    
+
     res.json({ scenes });
   } catch (err) {
     console.error(`Failed to list scenes: ${err}`);
@@ -286,59 +242,32 @@ app.get('/api/scenes/load/:name', function(req, res) {
   const safeName = name.replace(/[^a-z0-9_\-\.]/gi, '_');
 
   const candidates = [
-    { file: path.join(scenesDir, `${name}.mpd`), isMPD: true },
-    { file: path.join(scenesDir, `${safeName}.mpd`), isMPD: true },
-    { file: path.join(scenesDir, `${name}.json`), isMPD: false },
-    { file: path.join(scenesDir, `${safeName}.json`), isMPD: false },
-    { file: path.join(__dirname, 'models', `${name}.mpd`), isMPD: true },
-    { file: path.join(__dirname, 'models', `${safeName}.mpd`), isMPD: true },
-    { file: path.join(__dirname, 'models', `${name}.ldr`), isMPD: true },
-    { file: path.join(__dirname, 'models', `${safeName}.ldr`), isMPD: true },
+    path.join(scenesDir, `${name}.mpd`),
+    path.join(scenesDir, `${safeName}.mpd`),
+    path.join(__dirname, 'models', `${name}.mpd`),
+    path.join(__dirname, 'models', `${safeName}.mpd`),
+    path.join(__dirname, 'models', `${name}.ldr`),
+    path.join(__dirname, 'models', `${safeName}.ldr`)
   ];
-
-  const match = candidates.find(({ file }) => fs.existsSync(file));
-
-  if (!match) {
-    return res.status(404).json({ error: 'Scene not found' });
+  const sceneFile = candidates.find((file) => fs.existsSync(file));
+  if (!sceneFile) {
+    return res.status(404).json({ error: `Scene not found: ${name}` });
   }
 
-  const sceneFile = match.file;
-  const isMPD = match.isMPD;
-  
+  // Load MPD file
   try {
-    console.log(`Loading scene: name="${name}", file="${sceneFile}", isMPD=${isMPD}`);
-    if (isMPD) {
-      // Load MPD file
-      const mpdContent = fs.readFileSync(sceneFile, 'utf8');
-      worldModel = parseMPD(mpdContent, sceneFile);
-      saveWorldToDisk();
-      
-      console.log(`Loaded MPD scene "${name}"`);
-      res.json({ 
-        success: true, 
-        name: name,
-        worldModel: worldModel,
-        worldHash: getWorldSignature()
-      });
-    } else {
-      // Legacy JSON format
-      const sceneData = JSON.parse(fs.readFileSync(sceneFile, 'utf8'));
-      if (sceneData.version !== FILE_VERSION_CURRENT) {
-        return res.status(400).json({ error: 'Incompatible scene version' });
-      }
-      
-      // Load into current world
-      worldModel = sceneDataToModel(sceneData.worldModel || sceneData.world || [] , sceneData.name || name);
-      saveWorldToDisk();
-      
-      console.log(`Loaded scene "${sceneData.name || name}"`);
-      res.json({ 
-        success: true, 
-        name: sceneData.name,
-        worldModel: worldModel,
-        worldHash: getWorldSignature()
-      });
-    }
+    console.log(`Loading scene: name="${name}", file="${sceneFile}"`);
+    const mpdContent = fs.readFileSync(sceneFile, 'utf8');
+    worldModel = parseMPD(mpdContent, sceneFile);
+    saveWorldToDisk();
+
+    console.log(`Loaded MPD scene "${name}"`);
+    res.json({
+      success: true,
+      name: name,
+      worldModel: worldModel,
+      worldHash: getWorldSignature()
+    });
   } catch (err) {
     console.error(`Failed to load scene: ${err}`);
     res.status(500).json({ error: 'Failed to load scene' });
@@ -356,7 +285,7 @@ app.delete('/api/scenes/:name', function(req, res) {
   if (!fs.existsSync(sceneFile)) {
     return res.status(404).json({ error: 'Scene not found' });
   }
-  
+
   try {
     const filesToDelete = Array.from(collectSubmodelFiles(sceneFile));
     filesToDelete.forEach((file) => {
