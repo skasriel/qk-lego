@@ -49,12 +49,12 @@ export class BasicBrick extends Brick {
       // Try without the parts/ prefix since loader adds it
       const partPath = `${brickID}.dat`;
 
-      console.log(`Attempting to load LDraw model: ${partPath}`);
+      // console.log(`Attempting to load LDraw model: ${partPath}`);
 
       loader.load(
         partPath,
         (group) => {
-          console.log(`Successfully loaded LDraw model for ${brickID}`, group);
+          //console.log(`Successfully loaded LDraw model for ${brickID}`, group);
           // Apply color
           const mat = Brick.getMaterial(color, colorType);
           group.traverse((child) => {
@@ -66,11 +66,6 @@ export class BasicBrick extends Brick {
           resolve(group.clone());
         },
         (progress) => {
-          if (progress.total > 0) {
-            console.log(
-              `Loading ${brickID}: ${Math.round((progress.loaded / progress.total) * 100)}%`
-            );
-          }
         },
         (error) => {
           console.error(`Failed to load LDraw model for ${brickID}:`, error);
@@ -101,9 +96,8 @@ export class BasicBrick extends Brick {
     const ldrawGroup = preloadedLDrawModel;
     // Create a simple box for ghost (will be replaced once in scene)
     geo = new THREE.BoxGeometry(width * multX, height * multY, depth * multZ);
-    // LDraw uses Y-down, Three.js uses Y-up, so flip
-    // No scaling needed - we're using native LDU units (20 LDU = 1 stud, 24 LDU = 1 brick)
-    ldrawGroup.rotation.x = Math.PI; // Flip upright (studs on top) - LDraw Y is down in file
+    // LDraw uses Y-down, Three.js uses Y-up, so flip - Was doing this but bad idea
+    // ldrawGroup.rotation.x = Math.PI; // Flip upright (studs on top) - LDraw Y is down in file
 
     wrapper.add(ldrawGroup);
 

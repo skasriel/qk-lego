@@ -1,6 +1,6 @@
 /**
  * MPD (LDraw) file format utilities
- * 
+ *
  * MPD format:
  * - Line starting with "0" is a comment
  * - Line starting with "1" is a part placement:
@@ -13,7 +13,7 @@ const { LDRAW_COLORS } = require('../shared/constants.js');
 // Convert our internal brick format to MPD
 function bricksToMPD(bricks, name = 'Untitled') {
   const lines = [];
-  
+
   // Header
   lines.push(`0 ${name}`);
   lines.push(`0 Name: ${name}.ldr`);
@@ -21,7 +21,7 @@ function bricksToMPD(bricks, name = 'Untitled') {
   lines.push('0 !LDRAW_ORG Unofficial_Model');
   lines.push('0 !LICENSE Redistributable under CCAL version 2.0');
   lines.push('');
-  
+
   // Convert each brick to MPD format
   // Using native LDraw units (LDU) - no scaling needed
   // LDraw: Y points down, our app Y points up, so flip Y
@@ -44,13 +44,12 @@ function bricksToMPD(bricks, name = 'Untitled') {
           ldrawColor = parseInt(code);
         }
       }
-      
+
       // Position: using native LDU units (no conversion needed)
-      // Just flip Y axis (LDraw Y down, our Y up)
       const x = (brick.position?.x || 0);
-      const y = -(brick.position?.y || 0); // Flip Y
+      const y = (brick.position?.y || 0); // Was: Flip Y
       const z = (brick.position?.z || 0);
-      
+
       // Rotation matrix - use stored matrix if available, otherwise identity
       let m_a = 1, m_b = 0, m_c = 0, m_d = 0, m_e = 1, m_f = 0, m_g = 0, m_h = 0, m_i = 1;
       if (brick.rotationMatrix && brick.rotationMatrix.length === 9) {
@@ -62,7 +61,7 @@ function bricksToMPD(bricks, name = 'Untitled') {
         m_a = cos; m_c = sin;
         m_g = -sin; m_i = cos;
       }
-      
+
       // Part filename - add .dat extension if not present
       let partFile = brick.brickID || 'missing';
       if (typeof partFile !== 'string') {
@@ -79,7 +78,7 @@ function bricksToMPD(bricks, name = 'Untitled') {
       // Skip this brick rather than crashing
     }
   });
-  
+
   return lines.join('\n');
 }
 
@@ -87,12 +86,12 @@ function bricksToMPD(bricks, name = 'Untitled') {
 function mpdToBricks(mpdContent) {
   const bricks = [];
   const lines = mpdContent.split('\n');
-  
+
   for (const line of lines) {
     const trimmed = line.trim();
     // Skip comments and empty lines
     if (!trimmed || trimmed.startsWith('0')) continue;
-    
+
     const parts = trimmed.split(/\s+/);
     // MPD part line: 1 <color> x y z a b c d e f g h i <file>
     if (parts[0] === '1' && parts.length >= 15) {
@@ -101,19 +100,18 @@ function mpdToBricks(mpdContent) {
       const y = parseFloat(parts[3]);
       const z = parseFloat(parts[4]);
       const file = parts[14];
-      
+
       // Using native LDraw units (LDU) - no conversion needed
-      // Just flip Y axis (LDraw Y down, our Y up)
       const posX = x;
-      const posY = -y; // Flip Y back
+      const posY = y; // Was -y
       const posZ = z;
-      
+
       // Extract part number from filename
       const partNum = file.replace('.dat', '');
       const a = parseFloat(parts[5]); const b = parseFloat(parts[6]); const c = parseFloat(parts[7]);
       const d = parseFloat(parts[8]); const e = parseFloat(parts[9]); const f = parseFloat(parts[10]);
       const g = parseFloat(parts[11]); const h = parseFloat(parts[12]); const i = parseFloat(parts[13]);
-      
+
       bricks.push({
         uuid: Math.random().toString(36).substr(2, 9),
         position: { x: posX, y: posY, z: posZ },
@@ -129,22 +127,10 @@ function mpdToBricks(mpdContent) {
       });
     }
   }
-  
+
   return bricks;
 }
 
-// LDraw → app-space conversion constants.
-// App grid: 1 stud = 100 units on X/Z, 1 brick = 99.9 units on Y.
-// LDraw:    1 stud = 20 LDU on X/Z, 1 brick = 24 LDU on Y.
-// Using native LDU units - no conversion needed, just flip Y
-
-function ldrawToAppPoint(x, y, z) {
-  return {
-    x: x,
-    y: -y, // Flip Y (LDraw Y down, our Y up)
-    z: z,
-  };
-}
 
 // Parse MPD/LDR file recursively.
 // This parser handles line type 1 references and recursively expands nested
@@ -211,7 +197,7 @@ function ldrawPartExists(file) {
   const normalized = file.replace(/\\/g, '/');
   const lowerNormalized = normalized.toLowerCase();
   const lowerFile = file.toLowerCase();
-  
+
   const candidates = [
     // Original paths
     path.join(__dirname, 'ldraw', 'parts', normalized),
@@ -292,7 +278,9 @@ function parseModelContent(
     const rawX = parseFloat(parts[2]);
     const rawY = parseFloat(parts[3]);
     const rawZ = parseFloat(parts[4]);
-    const localPos = ldrawToAppPoint(rawX, rawY, rawZ);
+
+    const localPos = { x: rawX, y: rawY, z: rawZ }; // was -rawY
+
     const localMatrix = [
       parseFloat(parts[5]),
       parseFloat(parts[6]),
@@ -336,7 +324,7 @@ function parseModelContent(
           const normalizedFile = file.replace(/\\/g, '/');
           const subPath = path.join(path.dirname(basePath), normalizedFile);
           const subPathLower = path.join(path.dirname(basePath), normalizedFile.toLowerCase());
-          
+
           let actualPath = null;
           if (fs.existsSync(subPath)) {
             actualPath = subPath;
@@ -350,7 +338,7 @@ function parseModelContent(
               actualPath = tryPath;
             }
           }
-          
+
           if (actualPath) {
             const subContent = fs.readFileSync(actualPath, 'utf8');
             const externalSections = splitMPDSections(subContent, file);
@@ -375,6 +363,7 @@ function parseModelContent(
           }
         }
       } catch (e) {
+        console.error(`Error parsing submodel ${file}:`, e);
         // Ignore missing/unreadable submodels for now.
       }
       continue;
@@ -454,7 +443,7 @@ function normalizeBricksToFloor(bricks) {
 function modelToMPD(model, basePath = '') {
   const fs = require('fs');
   const path = require('path');
-  
+
   function closestLDrawColor(color) {
     const safe = color || '#FFFFFF';
     let ldrawColor = 0;
@@ -474,20 +463,20 @@ function modelToMPD(model, basePath = '') {
     }
     return ldrawColor;
   }
-  
+
   let subModelCounter = 0;
-  
+
   function writeModel(modelNode, filePath, parentName = '') {
     const lines = [];
     const modelName = modelNode.name || 'Untitled';
-    
+
     // Header
     lines.push(`0 ${modelName}`);
     lines.push(`0 Name: ${modelName}.mpd`);
     lines.push('0 Author: QK Lego Builder');
     lines.push('0 !LDRAW_ORG Unofficial_Model');
     lines.push('');
-    
+
     // Write children
     for (const child of (modelNode.children || [])) {
       if (child.type === 'brick') {
@@ -500,7 +489,7 @@ function modelToMPD(model, basePath = '') {
         const x = pos.x;
         const y = -pos.y;
         const z = pos.z;
-        
+
         lines.push(`1 ${color} ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${partFile}`);
       } else if (child.type === 'model') {
         // Generate name for sub-model if it doesn't have one
@@ -522,15 +511,15 @@ function modelToMPD(model, basePath = '') {
         lines.push(
           `1 16 ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${subFileName}`
         );
-        
+
         // Recursively write sub-model
         writeModel(child.object || child, subFilePath, subModelName);
       }
     }
-    
+
     fs.writeFileSync(filePath, lines.join('\n'));
   }
-  
+
   const mainPath = basePath || 'model.mpd';
   writeModel(model, mainPath, model.name);
   return mainPath;

@@ -187,7 +187,9 @@ class Scene extends React.Component {
   _initCore() {
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
+    this.scene.scale.y = -1; // Flip Y axis to match LDraw coordinate system (Y-down)
     this.ghostScene = new THREE.Scene();
+    this.ghostScene.scale.y = -1; // Flip Y axis for ghost scene too
     this.worldModel = new Model('Current World');
     this.ghostBricks = [];
 
@@ -322,7 +324,7 @@ class Scene extends React.Component {
         worldSize / 10
       );
 
-      camera.position.set(-12 * multX, 20 * multY, 30 * multZ);
+      camera.position.set(-12 * multX, -20 * multY, 30 * multZ);
       camera.lookAt(new THREE.Vector3());
       controls = new OrbitControls(camera, this.renderer.domElement);
       controls.addEventListener('change', () => (this._needsRendering = true));
@@ -1049,6 +1051,7 @@ class Scene extends React.Component {
         });
         this._setupNewBrick(brick, parentModel, transform);
       } else if (child.type === 'model') {
+        console.log('Child is a model - loading recursively')
         const childModelData = child.object || child;
         const runtimeModel = new Model(childModelData.name || 'Untitled');
         parentModel.addModel(runtimeModel, child.transform || null);

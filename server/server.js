@@ -81,8 +81,6 @@ function loadWorldFromDisk() {
     console.log(`File ${worldFileName} not found -> starting from empty world`);
     return;
   }
-
-  // Load MPD format
   console.log(`Loading MPD world from ${worldFileName}`);
   const mpdContent = fs.readFileSync(worldFileName, 'utf8');
   worldModel = parseMPD(mpdContent, worldFileName);
