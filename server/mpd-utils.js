@@ -485,9 +485,9 @@ function modelToMPD(model, basePath = '') {
         const rot = child.transform?.rotationMatrix || child.object?.rotationMatrix || [1,0,0,0,1,0,0,0,1];
         const color = closestLDrawColor(child.object?.color);
         const partFile = child.object?.brickID ? `${child.object.brickID}.dat` : 'missing.dat';
-        // Using native LDU units - just flip Y axis
+        // Using native LDU units
         const x = pos.x;
-        const y = -pos.y;
+        const y = pos.y; // was -pos.y
         const z = pos.z;
 
         lines.push(`1 ${color} ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${partFile}`);
@@ -506,7 +506,7 @@ function modelToMPD(model, basePath = '') {
         const pos = child.transform?.position || { x: 0, y: 0, z: 0 };
         const rot = child.transform?.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1];
         const x = pos.x;
-        const y = -pos.y;
+        const y = pos.y; // was -pos.y
         const z = pos.z;
         lines.push(
           `1 16 ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${subFileName}`

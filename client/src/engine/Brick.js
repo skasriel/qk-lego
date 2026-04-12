@@ -23,7 +23,7 @@ export class Brick {
     this.colorType = colorType;
   }
 
-  /* Create a JSON representation of this brick for saving to server / localStorage */
+  // Create a JSON representation of this brick for saving to server / localStorage
   save() {
     // Ensure matrix is up to date
     this.model.updateMatrixWorld(true);

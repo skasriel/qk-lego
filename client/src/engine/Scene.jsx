@@ -178,10 +178,43 @@ class Scene extends React.Component {
       const brick = await BasicBrick.createFromDAT(brickID, brickColor, colorType);
       this.rollOverBrick = brick;
       this.rollOverBrick.addToScene(this.scene, this.ghostScene);
+      this._positionRollOverBrickOnFloor(this.rollOverBrick);
       this.rollOverGhostBlock = this.rollOverBrick.ghostBlock;
       this._needsRendering = true;
     }
     this._needsRendering = true;
+  }
+
+  _positionRollOverBrickOnFloor(brick) {
+    const mesh = brick.getModel();
+    const bb = this._getModelLocalBoundingBox(mesh);
+    // In our Y-down convention, bottom is the largest local Y.
+    const bottomOffset = bb.max.y;
+    brick.setPosition({ x: 0, y: -Math.round(bottomOffset), z: 0 }, true);
+  }
+
+  _getModelLocalBoundingBox(object) {
+    object.updateMatrixWorld(true);
+
+    const rootInverse = new THREE.Matrix4().copy(object.matrixWorld).invert();
+    const box = new THREE.Box3();
+    const meshBox = new THREE.Box3();
+    const localMatrix = new THREE.Matrix4();
+
+    object.traverse((child) => {
+      if (!child.isMesh || !child.geometry) return;
+
+      if (!child.geometry.boundingBox) {
+        child.geometry.computeBoundingBox();
+      }
+
+      meshBox.copy(child.geometry.boundingBox);
+      localMatrix.multiplyMatrices(rootInverse, child.matrixWorld);
+      meshBox.applyMatrix4(localMatrix);
+      box.union(meshBox);
+    });
+
+    return box;
   }
 
   _initCore() {
@@ -378,6 +411,7 @@ class Scene extends React.Component {
     geometry.rotateX(-Math.PI / 2);
     const planeMaterial = new THREE.ShadowMaterial();
     planeMaterial.opacity = 1.0;
+    planeMaterial.side = THREE.DoubleSide;
     const plane = new THREE.Mesh(geometry, planeMaterial);
     plane.name = 'plane';
     plane.receiveShadow = true;
@@ -424,6 +458,7 @@ class Scene extends React.Component {
       this._rollOverBrickPromise = (async () => {
         const brick = await BasicBrick.createFromDAT(brickID, brickColor, colorType);
         brick.addToScene(this.scene, this.ghostScene);
+        this._positionRollOverBrickOnFloor(brick);
         this.rollOverBrick = brick;
         this.rollOverGhostBlock = brick.ghostBlock;
       })();
@@ -456,7 +491,7 @@ class Scene extends React.Component {
   */
   _getIntersect(event) {
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     // Use actual brick models for intersection, not ghost boxes
@@ -575,9 +610,7 @@ class Scene extends React.Component {
     return getWorldHash(this.worldModel);
   }
 
-  /**
-   * Mouse Handlers
-   */
+  // onMouseMove Mouse Handlers
   async _onMouseMove(event) {
     // Ignore mouse moves not on canvas or in UI areas
     if (event.target.localName !== 'canvas') return;
@@ -593,7 +626,10 @@ class Scene extends React.Component {
     const rollOverBrick = this.rollOverBrick;
     const rollOverGhostBlock = this.rollOverGhostBlock;
 
-    if (!rollOverBrick) return;
+    if (!rollOverBrick) {
+      console.log('No rollover brick!');
+      return;
+    }
 
     event.preventDefault();
 
@@ -611,40 +647,52 @@ class Scene extends React.Component {
 
     const intersect = this._getIntersect(event);
     if (intersect == null) {
+      console.log('No intersection - in the sky');
       // in the sky
       return;
     }
 
+    console.log('onMouseMove');
+
     const rollOverBrickMesh = rollOverBrick.getModel();
 
-    // Use the actual model to compute where its bottom is relative to its position
-    const modelBB = new THREE.Box3().setFromObject(rollOverBrickMesh);
-    const modelHeight = modelBB.max.y - modelBB.min.y;
-    // How far below the model's position.y is its bottom
-    const bottomOffset = rollOverBrickMesh.position.y - modelBB.min.y;
+    // Use the brick's local bounds so scene.scale.y = -1 does not invert the math.
+    const modelBB = this._getModelLocalBoundingBox(rollOverBrickMesh);
+    const modelHeight = Math.abs(modelBB.max.y - modelBB.min.y);
+    // In Y-down, bottom is the largest local Y.
+    const bottomOffset = modelBB.max.y;
+
+    console.log('=== ROLLOVER DEBUG ===');
+    console.log('modelBB.min:', modelBB.min);
+    console.log('modelBB.max:', modelBB.max);
+    console.log('rollOverBrickMesh.position:', rollOverBrickMesh.position);
+    console.log('bottomOffset:', bottomOffset);
+    console.log('modelHeight:', modelHeight);
 
     let intersectObject = intersect.object;
-    let position = new THREE.Vector3().copy(intersect.point);
+    let position = this.scene.worldToLocal(intersect.point.clone());
     // Add face normal if available (for placing on top of surfaces)
-    if (intersect.face && intersect.face.normal) {
-      position.add(intersect.face.normal);
-    }
+    // REMOVED: position.add(intersect.face.normal); - causes issues with Y-down coordinate system
 
     if (intersectObject === this.plane || intersectObject === this.ghostPlane) {
       // Place brick so its bottom sits on the floor (y=0)
-      position.y = Math.round(bottomOffset);
+      position.y = Math.round(-bottomOffset);
+      console.log('Placing on FLOOR, setting position.y to:', position.y);
     } else {
-      let intersectBox = new THREE.Box3().setFromObject(intersectObject);
+      const intersectRoot = intersectObject.userData?.brick?.getModel?.() || intersectObject;
+      let intersectBox = this._getModelLocalBoundingBox(intersectRoot);
       // Place brick so its bottom sits on top of the intersected object
       // Subtract knob nesting overlap so studs fit fully into holes
       // In LDU: stud is 4 LDU tall, nests into brick above
       const knobNesting = 4;
-      position.y = Math.round(intersectBox.max.y + bottomOffset - knobNesting);
+      console.log('Placing on BRICK, intersectBox.min.y:', intersectBox.min.y, 'max.y:', intersectBox.max.y);
+      position.y = Math.round(intersectRoot.position.y - knobNesting - bottomOffset);
+      console.log('Final position.y:', position.y);
     }
 
     // Snap to grid - align brick edges to grid lines
     // Use actual model bounding box for dimensions (stud counts may not match LDraw orientation)
-    const modelBox = new THREE.Box3().setFromObject(rollOverBrick.getModel());
+    const modelBox = this._getModelLocalBoundingBox(rollOverBrick.getModel());
     const modelWidth = modelBox.max.x - modelBox.min.x;
     const modelDepth = modelBox.max.z - modelBox.min.z;
     // Round dimensions to nearest grid unit to avoid floating point issues
