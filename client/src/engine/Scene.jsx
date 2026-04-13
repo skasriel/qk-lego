@@ -217,6 +217,21 @@ class Scene extends React.Component {
     return box;
   }
 
+  _getModelFootprintBox(object) {
+    object.updateMatrixWorld(true);
+    const worldBox = new THREE.Box3().setFromObject(object);
+    return {
+      min: {
+        x: worldBox.min.x - object.position.x,
+        z: worldBox.min.z - object.position.z,
+      },
+      max: {
+        x: worldBox.max.x - object.position.x,
+        z: worldBox.max.z - object.position.z,
+      },
+    };
+  }
+
   _initCore() {
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
@@ -647,72 +662,48 @@ class Scene extends React.Component {
 
     const intersect = this._getIntersect(event);
     if (intersect == null) {
-      console.log('No intersection - in the sky');
-      // in the sky
       return;
     }
 
-    console.log('onMouseMove');
-
-    const rollOverBrickMesh = rollOverBrick.getModel();
-
-    // Use the brick's local bounds so scene.scale.y = -1 does not invert the math.
-    const modelBB = this._getModelLocalBoundingBox(rollOverBrickMesh);
-    const modelHeight = Math.abs(modelBB.max.y - modelBB.min.y);
-    // In Y-down, bottom is the largest local Y.
-    const bottomOffset = modelBB.max.y;
-
-    console.log('=== ROLLOVER DEBUG ===');
-    console.log('modelBB.min:', modelBB.min);
-    console.log('modelBB.max:', modelBB.max);
-    console.log('rollOverBrickMesh.position:', rollOverBrickMesh.position);
-    console.log('bottomOffset:', bottomOffset);
-    console.log('modelHeight:', modelHeight);
+    // Recompute the rollover brick's LOCAL bounds so rotation is reflected correctly.
+    const bb = this._getModelLocalBoundingBox(rollOverBrick.getModel());
+    // In Y-down, bottom is max.y
+    const bottomOffset = bb.max.y;
 
     let intersectObject = intersect.object;
     let position = this.scene.worldToLocal(intersect.point.clone());
-    // Add face normal if available (for placing on top of surfaces)
-    // REMOVED: position.add(intersect.face.normal); - causes issues with Y-down coordinate system
 
     if (intersectObject === this.plane || intersectObject === this.ghostPlane) {
       // Place brick so its bottom sits on the floor (y=0)
       position.y = Math.round(-bottomOffset);
-      console.log('Placing on FLOOR, setting position.y to:', position.y);
     } else {
       const intersectRoot = intersectObject.userData?.brick?.getModel?.() || intersectObject;
-      let intersectBox = this._getModelLocalBoundingBox(intersectRoot);
+      const intersectBox = this._getModelLocalBoundingBox(intersectRoot);
       // Place brick so its bottom sits on top of the intersected object
       // Subtract knob nesting overlap so studs fit fully into holes
       // In LDU: stud is 4 LDU tall, nests into brick above
       const knobNesting = 4;
-      console.log('Placing on BRICK, intersectBox.min.y:', intersectBox.min.y, 'max.y:', intersectBox.max.y);
       position.y = Math.round(intersectRoot.position.y - knobNesting - bottomOffset);
-      console.log('Final position.y:', position.y);
     }
 
-    // Snap to grid - align brick edges to grid lines
-    // Use actual model bounding box for dimensions (stud counts may not match LDraw orientation)
-    const modelBox = this._getModelLocalBoundingBox(rollOverBrick.getModel());
-    const modelWidth = modelBox.max.x - modelBox.min.x;
-    const modelDepth = modelBox.max.z - modelBox.min.z;
+    // Snap to grid - align brick edges to grid lines.
+    // Use a world-axis-aligned footprint box so Y-rotation swaps the 2x3 / 3x2 footprint correctly.
+    const footprint = this._getModelFootprintBox(rollOverBrick.getModel());
+    const modelWidth = footprint.max.x - footprint.min.x;
+    const modelDepth = footprint.max.z - footprint.min.z;
     // Round dimensions to nearest grid unit to avoid floating point issues
-    const brickWidth = Math.round(modelWidth / multX) * multX;
-    const brickDepth = Math.round(modelDepth / multZ) * multZ;
+    // Add small epsilon to handle floating point errors consistently
+    const eps = 0.001;
+    const brickWidth = Math.round((modelWidth + eps) / multX) * multX;
+    const brickDepth = Math.round((modelDepth + eps) / multZ) * multZ;
 
-    // Account for model center offset (e.g. L-shaped bricks are asymmetric)
-    const modelCenterX = (modelBox.max.x + modelBox.min.x) / 2;
-    const modelCenterZ = (modelBox.max.z + modelBox.min.z) / 2;
-    const rollOverPos = rollOverBrick.getModel().position;
-    const offsetX = modelCenterX - rollOverPos.x;
-    const offsetZ = modelCenterZ - rollOverPos.z;
-
-    // Calculate left/front edge using model center (not position), snap to grid
-    const leftEdge = position.x + offsetX - brickWidth / 2;
-    const frontEdge = position.z + offsetZ - brickDepth / 2;
-    const snappedLeft = Math.round(leftEdge / multX) * multX;
-    const snappedFront = Math.round(frontEdge / multZ) * multZ;
-    position.x = snappedLeft + brickWidth / 2 - offsetX;
-    position.z = snappedFront + brickDepth / 2 - offsetZ;
+    // Snap using the brick footprint's current left/front edges in scene space.
+    const leftEdge = position.x + footprint.min.x;
+    const frontEdge = position.z + footprint.min.z;
+    const snappedLeft = Math.round((leftEdge + eps) / multX) * multX;
+    const snappedFront = Math.round((frontEdge + eps) / multZ) * multZ;
+    position.x = snappedLeft - footprint.min.x;
+    position.z = snappedFront - footprint.min.z;
 
     rollOverBrick.setPosition(position, true);
     this._needsRendering = true;

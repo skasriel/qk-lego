@@ -113,6 +113,14 @@ export class BasicBrick extends Brick {
     this.height = height;
     this.depth = depth;
     this.rotated = null;
+    
+    // Cache the local bounding box for performance and to avoid jitter
+    // from recalculating on every mouse move
+    const bbox = new THREE.Box3().setFromObject(this.model);
+    this._localBBox = {
+      min: { x: bbox.min.x, y: bbox.min.y, z: bbox.min.z },
+      max: { x: bbox.max.x, y: bbox.max.y, z: bbox.max.z }
+    };
   }
 
   static async createFromDAT(brickID, color, colorType) {
