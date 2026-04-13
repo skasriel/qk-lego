@@ -372,7 +372,7 @@ class Scene extends React.Component {
         worldSize / 10
       );
 
-      camera.position.set(-12 * multX, -20 * multY, 30 * multZ);
+      camera.position.set(-246, 454, 855);
       camera.lookAt(new THREE.Vector3());
       controls = new OrbitControls(camera, this.renderer.domElement);
       controls.addEventListener('change', () => (this._needsRendering = true));
@@ -678,12 +678,25 @@ class Scene extends React.Component {
       position.y = Math.round(-bottomOffset);
     } else {
       const intersectRoot = intersectObject.userData?.brick?.getModel?.() || intersectObject;
-      const intersectBox = this._getModelLocalBoundingBox(intersectRoot);
+      const intersectBrick = intersectObject.userData?.brick;
+      // Use cached bbox if available, otherwise calculate once
+      let intersectBox;
+      if (intersectBrick && intersectBrick._localBBox) {
+        intersectBox = intersectBrick._localBBox;
+      } else {
+        intersectBox = this._getModelLocalBoundingBox(intersectRoot);
+      }
       // Place brick so its bottom sits on top of the intersected object
-      // Subtract knob nesting overlap so studs fit fully into holes
-      // In LDU: stud is 4 LDU tall, nests into brick above
-      const knobNesting = 4;
-      position.y = Math.round(intersectRoot.position.y - knobNesting - bottomOffset);
+      // In Y-down coordinates with scene.scale.y = -1:
+      // - intersectBox.min.y is the TOP of the existing brick (smallest Y value)
+      // - We want new brick's bottom to be at that Y position
+      // - new brick's bottom is at its position.y + bb.max.y (since max.y is bottom in local coords)
+      // So: newPos.y + newBrickBottom = targetTop
+      // newPos.y = targetTop - newBrickBottom
+      const targetTopY = intersectRoot.position.y + intersectBox.min.y;
+      const newBrickBottomOffset = bb.max.y;
+      const knobNesting = 4; // Studs nest 4 LDU into the brick above
+      position.y = Math.round(targetTopY - newBrickBottomOffset + knobNesting);
     }
 
     // Snap to grid - align brick edges to grid lines.
