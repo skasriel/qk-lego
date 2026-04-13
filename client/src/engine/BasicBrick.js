@@ -13,6 +13,7 @@ const USE_SHADOWS = false;
 let staticCounter = 0;
 let lDrawLoader = null;
 let lDrawCache = {};
+let lDrawMaterialsPromise = null;
 
 function getLDrawLoader() {
   if (!lDrawLoader) {
@@ -27,6 +28,18 @@ function getLDrawLoader() {
     lDrawLoader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
     console.log('After set, loader.ConditionalLineMaterial:', lDrawLoader.ConditionalLineMaterial);
     console.log('Are they equal?', lDrawLoader.ConditionalLineMaterial === LDrawConditionalLineMaterial);
+    
+    // Preload LDraw color definitions to avoid "Material properties not available" warnings
+    // Use absolute path since LDConfig.ldr is in /ldraw/, not /ldraw/parts/
+    const originalPath = lDrawLoader.path;
+    lDrawLoader.setPath('/ldraw/');
+    lDrawMaterialsPromise = lDrawLoader.preloadMaterials('LDConfig.ldr').then(() => {
+      // Restore original path after preloading
+      lDrawLoader.setPath(originalPath);
+    }).catch(err => {
+      console.warn('Failed to preload LDConfig.ldr:', err);
+      lDrawLoader.setPath(originalPath);
+    });
   }
   return lDrawLoader;
 }
@@ -44,8 +57,14 @@ export class BasicBrick extends Brick {
       return lDrawCache[cacheKey].clone();
     }
 
+    const loader = getLDrawLoader();
+    
+    // Wait for materials to be preloaded before loading any parts
+    if (lDrawMaterialsPromise) {
+      await lDrawMaterialsPromise;
+    }
+    
     return new Promise((resolve, reject) => {
-      const loader = getLDrawLoader();
       // Try without the parts/ prefix since loader adds it
       const partPath = `${brickID}.dat`;
 
