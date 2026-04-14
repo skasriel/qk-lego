@@ -48,10 +48,31 @@ export function CSSToHex(cssColor) {
   return parseInt(`#${cssColor.substring(1)}`, 16);
 }
 
+function applyRequestedLDrawColor(group, color, colorType) {
+  const requestedMaterial = Brick.getMaterial(color, colorType);
+
+  group.traverse((child) => {
+    if (!child.isMesh || !child.material) return;
+
+    const code = child.material.userData?.code;
+
+    // Only replace "current color" / edge-color driven materials.
+    // Preserve fixed colors defined by the underlying LDraw part itself.
+    if (code === 16 || code === 24 || code === '16' || code === '24') {
+      child.material = requestedMaterial.clone();
+      child.material.userData = {
+        ...(child.material.userData || {}),
+        code,
+      };
+    }
+  });
+}
+
 export class BasicBrick extends Brick {
   static BrickType = 'BASIC_BRICK';
 
   static async loadLDrawModel(brickID, color, colorType) {
+    // Cache by brickID and color since we apply the color when loading
     const cacheKey = `${brickID}_${color}_${colorType}`;
     if (lDrawCache[cacheKey]) {
       return lDrawCache[cacheKey].clone();
@@ -73,14 +94,9 @@ export class BasicBrick extends Brick {
       loader.load(
         partPath,
         (group) => {
-          //console.log(`Successfully loaded LDraw model for ${brickID}`, group);
-          // Apply color
-          const mat = Brick.getMaterial(color, colorType);
-          group.traverse((child) => {
-            if (child.isMesh) {
-              child.material = mat;
-            }
-          });
+          // Apply the requested color only to "current color" surfaces.
+          // Preserve any fixed colors defined inside the LDraw part.
+          applyRequestedLDrawColor(group, color, colorType);
           lDrawCache[cacheKey] = group;
           resolve(group.clone());
         },
