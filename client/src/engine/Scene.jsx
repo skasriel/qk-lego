@@ -1117,6 +1117,13 @@ class Scene extends React.Component {
     return parentModel;
   }
 
+  async addModelToScene(modelData) {
+    // Add a model to the existing scene (don't replace)
+    // Position it at origin for now - could be enhanced to place at cursor
+    await this.loadWorldModel(modelData, this.worldModel, null);
+    this._renderScene();
+  }
+
   async _loadState() {
     try {
       const res = await window.fetch('/api/get-scene');

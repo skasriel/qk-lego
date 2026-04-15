@@ -1,6 +1,7 @@
 import React from 'react';
 
 import BrickPicker from './BrickPicker.jsx';
+import ModelPicker from './ModelPicker.jsx';
 
 //import styles from '../styles/topbar.css';
 
@@ -40,15 +41,88 @@ styles.title = {
   fontSize: '1em',
 };
 
-const Bottombar = ({ brickID, onClickSetBrick, children }) => {
-  return (
-    <div style={styles.bottombar}>
-      <div style={styles.section}>
-        <BrickPicker selectedID={brickID} handleSetBrick={onClickSetBrick} />
-      </div>
-      {children}
-    </div>
-  );
+styles.tabBar = {
+  display: 'flex',
+  padding: '0 15px',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  marginBottom: '8px',
 };
+
+styles.tab = {
+  padding: '8px 16px',
+  cursor: 'pointer',
+  color: 'rgba(255, 255, 255, 0.6)',
+  fontSize: '0.9em',
+  borderBottom: '2px solid transparent',
+  transition: 'all 0.2s',
+};
+
+styles.tabActive = {
+  padding: '8px 16px',
+  cursor: 'pointer',
+  color: '#FFFFFF',
+  fontSize: '0.9em',
+  borderBottom: '2px solid #60a5fa',
+  backgroundColor: 'rgba(96, 165, 250, 0.1)',
+};
+
+class Bottombar extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      activeTab: 'bricks', // 'bricks' or 'models'
+    };
+  }
+
+  handleSelectModel = async (model) => {
+    const { onLoadModel } = this.props;
+    if (onLoadModel) {
+      // Load the model (this will add it to the scene, not replace)
+      try {
+        const res = await fetch(`/api/models/load/${encodeURIComponent(model.id || model.name)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.worldModel) {
+            onLoadModel(data.worldModel, false); // false = don't replace, add to scene
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load model:', err);
+      }
+    }
+  };
+
+  render() {
+    const { brickID, onClickSetBrick, children } = this.props;
+    const { activeTab } = this.state;
+
+    return (
+      <div style={styles.bottombar}>
+        <div style={styles.tabBar}>
+          <div
+            style={activeTab === 'bricks' ? styles.tabActive : styles.tab}
+            onClick={() => this.setState({ activeTab: 'bricks' })}
+          >
+            Bricks
+          </div>
+          <div
+            style={activeTab === 'models' ? styles.tabActive : styles.tab}
+            onClick={() => this.setState({ activeTab: 'models' })}
+          >
+            Models
+          </div>
+        </div>
+        <div style={styles.section}>
+          {activeTab === 'bricks' ? (
+            <BrickPicker selectedID={brickID} handleSetBrick={onClickSetBrick} />
+          ) : (
+            <ModelPicker onSelectModel={this.handleSelectModel} />
+          )}
+        </div>
+        {children}
+      </div>
+    );
+  }
+}
 
 export default Bottombar;

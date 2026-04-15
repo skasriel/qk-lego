@@ -39,6 +39,22 @@ function getCursor(mode) {
 }
 
 class Builder extends React.Component {
+  constructor(props) {
+    super(props);
+    this.sceneRef = React.createRef();
+  }
+
+  handleLoadModel = async (modelData, replace = false) => {
+    if (this.sceneRef.current) {
+      if (replace) {
+        await this.sceneRef.current.loadWorldModel(modelData);
+      } else {
+        // Add model to existing scene
+        await this.sceneRef.current.addModelToScene(modelData);
+      }
+    }
+  };
+
   render() {
     const {
       mode,
@@ -66,6 +82,7 @@ class Builder extends React.Component {
         </Topbar>
 
         <Scene
+          ref={this.sceneRef}
           setMode={setMode}
           mode={mode}
           brickColor={color}
@@ -74,7 +91,7 @@ class Builder extends React.Component {
           style={{ cursor: getCursor(mode) }}
         />
 
-        <Bottombar brickID={brickID} onClickSetBrick={setBrick} />
+        <Bottombar brickID={brickID} onClickSetBrick={setBrick} onLoadModel={this.handleLoadModel} />
       </div>
     );
   }

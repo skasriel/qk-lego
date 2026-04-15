@@ -1,0 +1,20 @@
+0 6954 Renegade
+0 Name: 6954_Renegade.ldr
+0 Author: LEGO
+0 bassfoundation@yahoo.com
+0 !COLOUR SandBlue CODE 64 VALUE #88A2B5 EDGE 0 ALPHA 255
+0 !COLOUR Chrome CODE 65 VALUE #A1A29B EDGE 0 ALPHA 255
+0 !COLOUR Silver CODE 66 VALUE #C7C7C7 EDGE 0 ALPHA 255
+0 !COLOUR Gold CODE 67 VALUE #BBBD39 EDGE 0 ALPHA 255
+0 ROTATION CENTER 0 0 0 1 "Custom" 
+0 ROTATION CONFIG 0 0
+1 0 0 0 0 1 0 0 0 1 0 0 0 1 6954_section1.ldr
+1 0 -80 -16 -360 1 0 0 0 1 0 0 0 1 6954_section2.ldr
+1 0 80 -40 -160 1 0 0 0 1 0 0 0 1 6954_section3.ldr
+1 0 -200 -72 40 1 0 0 0 1 0 0 0 1 6954_flyer.ldr
+1 0 200 -72 40 1 0 0 0 1 0 0 0 1 6954_flyer.ldr
+1 0 0 -16 60 1 0 0 0 1 0 0 0 1 6954_section4.ldr
+1 0 -40 -72 240 1 0 0 0 1 0 0 0 1 6954_section5.ldr
+1 0 40 -72 240 1 0 0 0 1 0 0 0 1 6954_section5.ldr
+1 0 -200 -92 48 1 0 0 0 1 0 0 0 1 fig_blacktronI_recline1.ldr
+0

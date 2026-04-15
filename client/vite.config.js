@@ -18,6 +18,10 @@ export default defineConfig({
       '/ldraw': {
         target: 'http://localhost:5001',
         changeOrigin: true,
+      },
+      '/sets': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
       }
     }
   },

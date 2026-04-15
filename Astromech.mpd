@@ -1,0 +1,9 @@
+0 Astromech
+0 Name: Astromech.mpd
+0 Author: QK Lego Builder
+0 !LDRAW_ORG Unofficial_Model
+
+1 2 10 -8 0 1 0 0 0 1 0 0 0 1 30361dps2.dat
+1 2 -10 -8 0 0 0 -1 0 1 0 1 0 0 30362.dat
+1 2 30 -8 0 0 0 1 0 1 0 -1 0 0 30362.dat
+1 15 10 -42 0 1 0 0 0 1 0 0 0 1 30367bps7.dat

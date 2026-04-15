@@ -1,0 +1,14 @@
+0 42100 - foldableladdertop
+0 Name: 42100 - foldableladdertop.mpd
+0 Author: QK Lego Builder
+0 !LDRAW_ORG Unofficial_Model
+
+1 15 0 0 0 0 -1 0 1 0 0 0 0 1 32140.dat
+1 1 0 0 20 1 0 0 0 1 0 0 0 1 6558.dat
+1 0 -30 0 0 1 0 0 0 1 0 0 0 1 3705.dat
+1 15 -20 0 20 0 1 0 -1 0 0 0 0 1 32316.dat
+1 1 -40 0 60 -1 0 0 0 -1 0 0 0 1 6558.dat
+1 15 -40 0 0 0 -1 0 1 0 0 0 0 1 32140.dat
+1 0 -50 0 20 1 0 0 0 1 0 0 0 1 2780.dat
+1 16 0 0 -20 1 0 0 0 0.156 0.988 0 -0.988 0.156 42100 - foldableladder.mpd
+1 15 -60 0 0 0 1 0 -1 0 0 0 0 1 32523.dat

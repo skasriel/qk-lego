@@ -1,0 +1,9 @@
+0 R5-D4
+0 Name: R5-D4.mpd
+0 Author: QK Lego Builder
+0 !LDRAW_ORG Unofficial_Model
+
+1 15 -50 0 0 0 0 -1 0 1 0 1 0 0 30362.dat
+1 15 -10 0 0 0 0 1 0 1 0 -1 0 0 30362.dat
+1 15 -30 0 0 1 0 0 0 1 0 0 0 1 30361dps2.dat
+1 15 -30 -34 0 1 0 0 0 1 0 0 0 1 98100.dat

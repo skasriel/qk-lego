@@ -61,6 +61,9 @@ app.use('/ldraw', (req, res, next) => {
 // Serve the React client build
 app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
 
+// Serve sets directory (for model images)
+app.use('/sets', express.static(path.join(__dirname, 'sets')));
+
 
 const FILE_VERSION_CURRENT = 1.4;
 let worldModel = { type: 'model', name: 'Current World', children: [] };
@@ -296,6 +299,156 @@ app.delete('/api/scenes/:name', function(req, res) {
     res.status(500).json({ error: 'Failed to delete scene' });
   }
 });
+
+// API endpoint to list available models (from server/models directory)
+app.get('/api/models/list', (req, res) => {
+  try {
+    const modelsDir = path.join(__dirname, 'models');
+    const setsDir = path.join(__dirname, 'sets');
+    const models = [];
+    
+    // First check the sets directory (downloaded from Seymouria)
+    if (fs.existsSync(setsDir)) {
+      const setDirs = fs.readdirSync(setsDir);
+      
+      setDirs.forEach(setDir => {
+        const setPath = path.join(setsDir, setDir);
+        if (!fs.statSync(setPath).isDirectory()) return;
+        
+        const files = fs.readdirSync(setPath);
+        const mpdFiles = files.filter(f => f.endsWith('.mpd') || f.endsWith('.ldr'));
+        const imgFile = files.find(f => f.endsWith('.jpg') || f.endsWith('.png'));
+        const metaFile = path.join(setPath, 'metadata.json');
+        
+        let metadata = {};
+        if (fs.existsSync(metaFile)) {
+          try {
+            metadata = JSON.parse(fs.readFileSync(metaFile, 'utf8'));
+          } catch (e) {}
+        }
+        
+        if (mpdFiles.length > 0) {
+          const mainFile = mpdFiles[0];
+          const filePath = path.join(setPath, mainFile);
+          const stats = fs.statSync(filePath);
+          
+          models.push({
+            id: setDir,
+            name: metadata.name || setDir.replace(/_/g, ' '),
+            filename: mainFile,
+            setNumber: setDir,
+            size: stats.size,
+            modified: stats.mtime.toISOString(),
+            image: metadata.image_url ? `/sets/${setDir}/${setDir}.jpg` : (imgFile ? `/sets/${setDir}/${imgFile}` : null),
+            year: metadata.year || null,
+            theme: metadata.theme || null,
+            pieces: metadata.pieces || null,
+            minifigures: metadata.minifigures || null,
+          });
+        }
+      });
+    }
+    
+    // Also check the old models directory
+    if (fs.existsSync(modelsDir)) {
+      const files = fs.readdirSync(modelsDir);
+      
+      files.forEach(file => {
+        if (file.endsWith('.mpd') || file.endsWith('.ldr')) {
+          const filePath = path.join(modelsDir, file);
+          const stats = fs.statSync(filePath);
+          const name = file.replace(/\.(mpd|ldr)$/i, '');
+          
+          // Extract set number if present
+          const setMatch = name.match(/^(\d{4,5})/);
+          const setNumber = setMatch ? setMatch[1] : null;
+          
+          // Skip if already added from sets directory (check by setNumber or id)
+          const alreadyExists = models.find(m => 
+            m.id === name || 
+            (setNumber && m.setNumber === setNumber)
+          );
+          if (!alreadyExists) {
+            models.push({
+              id: name,
+              name: name.replace(/_/g, ' '),
+              filename: file,
+              setNumber: setNumber,
+              size: stats.size,
+              modified: stats.mtime.toISOString(),
+              image: null,
+              year: null,
+              theme: null,
+              pieces: null,
+              minifigures: null,
+            });
+          }
+        }
+      });
+    }
+    
+    // Sort by name
+    models.sort((a, b) => a.name.localeCompare(b.name));
+    
+    res.json({ models });
+  } catch (err) {
+    console.error('Failed to list models:', err);
+    res.status(500).json({ error: 'Failed to list models' });
+  }
+});
+
+// API endpoint to load a model (for adding to scene, not replacing)
+app.get('/api/models/load/:name', (req, res) => {
+  try {
+    const name = req.params.name;
+    const safeName = name.replace(/[^a-z0-9_\-\. ]/gi, '_');
+    
+    // Try different locations and extensions
+    let modelFile = null;
+    
+    // First, check if it's a directory in sets/ (for downloaded sets)
+    const setsDir = path.join(__dirname, 'sets', name);
+    if (fs.existsSync(setsDir) && fs.statSync(setsDir).isDirectory()) {
+      const files = fs.readdirSync(setsDir);
+      const mpdFile = files.find(f => f.endsWith('.mpd') || f.endsWith('.ldr'));
+      if (mpdFile) {
+        modelFile = path.join(setsDir, mpdFile);
+      }
+    }
+    
+    // Fall back to old locations
+    if (!modelFile) {
+      const candidates = [
+        path.join(__dirname, 'sets', name, `${name}.mpd`),
+        path.join(__dirname, 'sets', name, `${safeName}.mpd`),
+        path.join(__dirname, 'sets', name, `${name}.ldr`),
+        path.join(__dirname, 'sets', name, `${safeName}.ldr`),
+        path.join(__dirname, 'models', `${name}.mpd`),
+        path.join(__dirname, 'models', `${safeName}.mpd`),
+        path.join(__dirname, 'models', `${name}.ldr`),
+        path.join(__dirname, 'models', `${safeName}.ldr`),
+      ];
+      modelFile = candidates.find(f => fs.existsSync(f));
+    }
+    
+    if (!modelFile) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+    
+    const mpdContent = fs.readFileSync(modelFile, 'utf8');
+    const worldModel = parseMPD(mpdContent, modelFile);
+    
+    res.json({
+      success: true,
+      name: name,
+      worldModel: worldModel,
+    });
+  } catch (err) {
+    console.error(`Failed to load model: ${err}`);
+    res.status(500).json({ error: 'Failed to load model' });
+  }
+});
+
 // Serve React app for any non-API, non-file routes (SPA fallback)
 app.get('*', (req, res) => {
   // Don't serve index.html for requests that look like file paths (models, assets, etc.)

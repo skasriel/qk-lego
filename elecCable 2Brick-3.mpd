@@ -1,0 +1,9 @@
+0 elecCable 2Brick-3
+0 Name: elecCable 2Brick-3.mpd
+0 Author: QK Lego Builder
+0 !LDRAW_ORG Unofficial_Model
+
+1 0 -60 -152 335 1 0 0 0 1 0 0 0 1 2726c03.dat
+1 0 -60 -136 335 1 0 0 0 1 0 0 0 1 2727ac01.dat
+1 0 0 0 155 0 0 1 0 1 0 -1 0 0 2726c03.dat
+1 0 0 16 155 0 0 1 0 1 0 -1 0 0 2727ac01.dat

@@ -87,7 +87,7 @@ export class BasicBrick extends Brick {
     
     return new Promise((resolve, reject) => {
       // Try without the parts/ prefix since loader adds it
-      const partPath = `${brickID}.dat`;
+      const partPath = brickID.toLowerCase().endsWith('.dat') ? brickID : `${brickID}.dat`;
 
       // console.log(`Attempting to load LDraw model: ${partPath}`);
 
