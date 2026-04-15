@@ -1161,52 +1161,55 @@ class Scene extends React.Component {
   }
 
   _positionModelOnFloor() {
-    // Calculate the bounding box of all bricks in the scene
-    const worldBox = new THREE.Box3();
-    this.scene.traverse((child) => {
-      if (child.isMesh && child.userData && child.userData.brick) {
-        worldBox.expandByObject(child);
-      }
-    });
-
-    if (worldBox.isEmpty()) {
+    const bricks = this.getAllBricks();
+    if (bricks.length === 0) {
       console.log('No bricks found to position on floor');
       return;
     }
 
-    // In LDraw Y-down coordinates, the lowest point has the largest Y value
-    const lowestY = worldBox.max.y;
-    console.log(`Model bounds: minY=${worldBox.min.y.toFixed(2)}, maxY=${worldBox.max.y.toFixed(2)}, lowestY=${lowestY.toFixed(2)}`);
-    
-    // If the lowest point is not at y=0, shift the entire model
-    if (Math.abs(lowestY) > 0.1) {
-      const offset = -lowestY;
-      console.log(`Shifting model by ${offset.toFixed(2)} to place bottom at floor (y=0)`);
-      
-      // Shift all bricks in the scene (including both meshes and line segments)
-      this.scene.traverse((child) => {
-        if (child.userData && child.userData.brick) {
-          child.position.y += offset;
-        }
-      });
-      
-      // Update the stored positions in the world model
-      const updatePositions = (node) => {
-        if (node.type === 'brick' && node.object) {
-          if (node.object._position) {
-            node.object._position.y += offset;
-          }
-          if (node.object.model) {
-            node.object.model.position.y += offset;
-          }
-        }
-        if (node.children) {
-          node.children.forEach(updatePositions);
-        }
-      };
-      updatePositions(this.worldModel);
-    } else {
+    // Work in scene-local LDraw coordinates, not world coordinates, because the scene
+    // itself is flipped with scale.y = -1. Using expandByObject() gives world-space
+    // bounds after that flip, which is the wrong basis for deciding what "lowest" means.
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const brick of bricks) {
+      const bb = brick._localBBox || this._getModelLocalBoundingBox(brick.getModel());
+      const pos = brick.getPosition();
+      const brickMinY = pos.y + bb.min.y;
+      const brickMaxY = pos.y + bb.max.y;
+      minY = Math.min(minY, brickMinY);
+      maxY = Math.max(maxY, brickMaxY);
+    }
+
+    if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
+      console.log('No brick bounds found to position on floor');
+      return;
+    }
+
+    // In scene-local LDraw coordinates, Y points down, so the lowest point is maxY.
+    const lowestY = maxY;
+    console.log('floor fix debug', {
+      brickCount: bricks.length,
+      minY,
+      maxY,
+      lowestY,
+    });
+    console.log(`Model bounds: minY=${minY.toFixed(2)}, maxY=${maxY.toFixed(2)}, lowestY=${lowestY.toFixed(2)}`);
+
+    if (Math.abs(lowestY) <= 0.1) {
       console.log('Model already positioned correctly on floor');
+      return;
+    }
+
+    const offset = -lowestY;
+    console.log(`Shifting model by ${offset.toFixed(2)} to place bottom at floor (y=0)`);
+
+    // Move each brick as a whole unit so meshes, line segments, and ghost blocks stay aligned.
+    for (const brick of bricks) {
+      const position = brick.getPosition().clone();
+      position.y += offset;
+      brick.setPosition(position, true);
     }
   }
 
