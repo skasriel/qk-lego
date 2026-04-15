@@ -74,6 +74,20 @@ export class Brick {
     // The ghost block (simple box) is the authoritative reference
     this.ghostBlock.position.copy(position);
     this.model.position.copy(position);
+
+    // Some loaded bricks have matrixAutoUpdate disabled because we apply a full
+    // rotation matrix from saved/MPD state. In that case, changing .position alone
+    // does not move the rendered object — we must also update the translation in
+    // the matrices explicitly.
+    if (this.model.matrixAutoUpdate === false) {
+      this.model.matrix.setPosition(this.model.position);
+      this.model.updateMatrixWorld(true);
+    }
+
+    if (this.ghostBlock.matrixAutoUpdate === false) {
+      this.ghostBlock.matrix.setPosition(this.ghostBlock.position);
+      this.ghostBlock.updateMatrixWorld(true);
+    }
   }
 
   static getMaterial(color, colorType) {
@@ -81,20 +95,26 @@ export class Brick {
     const safeColor = color || '#FFFFFF';
     switch (colorType) {
       case ColorCollections.colorTypes.Solid:
-        return new THREE.MeshPhongMaterial({
+        return new THREE.MeshStandardMaterial({
           color: safeColor,
+          roughness: 0.4,
+          metalness: 0.0,
           polygonOffset: true,
-          polygonOffsetFactor: 1, // positive value pushes polygon further away
+          polygonOffsetFactor: 1,
           polygonOffsetUnits: 1,
         });
       case ColorCollections.colorTypes.Transparent:
-        return new THREE.MeshPhongMaterial({
+        return new THREE.MeshPhysicalMaterial({
           color: color,
           opacity: 0.6,
           transparent: true,
+          roughness: 0.1,
+          metalness: 0,
+          transmission: 0.9,
+          thickness: 0.5,
           side: THREE.DoubleSide,
           polygonOffset: true,
-          polygonOffsetFactor: 1, // positive value pushes polygon further away
+          polygonOffsetFactor: 1,
           polygonOffsetUnits: 1,
         });
       case ColorCollections.colorTypes.Metallic:
@@ -103,17 +123,18 @@ export class Brick {
           roughness: 0.2,
           metalness: 0.85,
           polygonOffset: true,
-          polygonOffsetFactor: 1, // positive value pushes polygon further away
+          polygonOffsetFactor: 1,
           polygonOffsetUnits: 1,
         });
 
       default:
         console.log('Unknown color type: ' + colorType);
-        return new THREE.MeshPhongMaterial({
+        return new THREE.MeshStandardMaterial({
           color: color,
-          roughness: 0.3,
+          roughness: 0.4,
+          metalness: 0,
           polygonOffset: true,
-          polygonOffsetFactor: 1, // positive value pushes polygon further away
+          polygonOffsetFactor: 1,
           polygonOffsetUnits: 1,
         });
     }

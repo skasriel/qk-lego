@@ -407,19 +407,19 @@ class Scene extends React.Component {
 
   _initEnv() {
     // Main directional light - creates highlights and shadows to show true colors
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(50, 200, 100);
     directionalLight.castShadow = false;
     this.scene.add(directionalLight);
 
     // Fill light from opposite side - softens shadows
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
     fillLight.position.set(-50, 100, -50);
     this.scene.add(fillLight);
 
     // Ambient light - provides base illumination so dark areas aren't black
     // Reduced intensity to let directional lights show the true colors
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
     this.scene.add(ambientLight);
 
     const geometry = new THREE.PlaneGeometry(worldSize, worldSize);
