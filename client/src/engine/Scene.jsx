@@ -756,6 +756,35 @@ class Scene extends React.Component {
   }
 
   /**
+   * Place the current model rollover at its current position
+   * This adds all bricks from the model to the scene permanently
+   */
+  async _createModel(intersect) {
+    if (!this.isModelRollOverActive() || !this.rollOverModel || !this.rollOverModelData) {
+      return;
+    }
+
+    // Get the current position of the rollover model
+    const position = this.rollOverModel.position.clone();
+    
+    // Load the model data at the specified position
+    // We need to create a transform that positions the model at the rollover location
+    const modelTransform = {
+      position: { x: position.x, y: position.y, z: position.z },
+      rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1] // Identity for now, could add rotation later
+    };
+
+    // Add the model to the world
+    await this.loadWorldModel(this.rollOverModelData, this.worldModel, modelTransform);
+    
+    // Clear the rollover (removes preview)
+    this.clearModelRollOver();
+    
+    this._renderScene();
+  }
+
+
+  /**
    * Returns a one way hash of the current view of the world, as a way to ensure consistency between client(s) and Server
    * Obviously the server needs to compute hashes with the same algorithm!
    */
@@ -914,7 +943,7 @@ class Scene extends React.Component {
     this._needsRendering = true;
   }
 
-  _onMouseUp(event) {
+  async _onMouseUp(event) {
     // Ignore clicks not on canvas
     if (event.target.localName !== 'canvas') return;
 
@@ -948,9 +977,27 @@ class Scene extends React.Component {
             // now delete the brick locally
             this._deleteBrick(brick);
           }
+        case Modes.Build:
+          if (this.isModelRollOverActive()) {
+            await this._createModel(intersect);
+          } else {
+            await this._createBrick(intersect);
+          }
           break;
         case Modes.Build:
-          this._createBrick(intersect);
+          if (this.isModelRollOverActive()) {
+            await this._createModel(intersect);
+          } else {
+            await this._createBrick(intersect);
+          }
+          break;
+        case Modes.Build:
+          if (this.isModelRollOverActive()) {
+            await this._createModel(intersect);
+          } else {
+            await this._createBrick(intersect);
+          }
+          break;
           break;
         case Modes.Paint:
           this._paintBrick(intersect);
