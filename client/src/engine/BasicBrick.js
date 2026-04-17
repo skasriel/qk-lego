@@ -27,19 +27,25 @@ function getLDrawLoader() {
     console.log('Type:', typeof LDrawConditionalLineMaterial);
     lDrawLoader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
     console.log('After set, loader.ConditionalLineMaterial:', lDrawLoader.ConditionalLineMaterial);
-    console.log('Are they equal?', lDrawLoader.ConditionalLineMaterial === LDrawConditionalLineMaterial);
-    
+    console.log(
+      'Are they equal?',
+      lDrawLoader.ConditionalLineMaterial === LDrawConditionalLineMaterial
+    );
+
     // Preload LDraw color definitions to avoid "Material properties not available" warnings
     // Use absolute path since LDConfig.ldr is in /ldraw/, not /ldraw/parts/
     const originalPath = lDrawLoader.path;
     lDrawLoader.setPath('/ldraw/');
-    lDrawMaterialsPromise = lDrawLoader.preloadMaterials('LDConfig.ldr').then(() => {
-      // Restore original path after preloading
-      lDrawLoader.setPath(originalPath);
-    }).catch(err => {
-      console.warn('Failed to preload LDConfig.ldr:', err);
-      lDrawLoader.setPath(originalPath);
-    });
+    lDrawMaterialsPromise = lDrawLoader
+      .preloadMaterials('LDConfig.ldr')
+      .then(() => {
+        // Restore original path after preloading
+        lDrawLoader.setPath(originalPath);
+      })
+      .catch((err) => {
+        console.warn('Failed to preload LDConfig.ldr:', err);
+        lDrawLoader.setPath(originalPath);
+      });
   }
   return lDrawLoader;
 }
@@ -79,12 +85,12 @@ export class BasicBrick extends Brick {
     }
 
     const loader = getLDrawLoader();
-    
+
     // Wait for materials to be preloaded before loading any parts
     if (lDrawMaterialsPromise) {
       await lDrawMaterialsPromise;
     }
-    
+
     return new Promise((resolve, reject) => {
       // Try without the parts/ prefix since loader adds it
       const partPath = brickID.toLowerCase().endsWith('.dat') ? brickID : `${brickID}.dat`;
@@ -100,8 +106,7 @@ export class BasicBrick extends Brick {
           lDrawCache[cacheKey] = group;
           resolve(group.clone());
         },
-        (progress) => {
-        },
+        (progress) => {},
         (error) => {
           console.error(`Failed to load LDraw model for ${brickID}:`, error);
           resolve(null);
@@ -148,13 +153,13 @@ export class BasicBrick extends Brick {
     this.height = height;
     this.depth = depth;
     this.rotated = null;
-    
+
     // Cache the local bounding box for performance and to avoid jitter
     // from recalculating on every mouse move
     const bbox = new THREE.Box3().setFromObject(this.model);
     this._localBBox = {
       min: { x: bbox.min.x, y: bbox.min.y, z: bbox.min.z },
-      max: { x: bbox.max.x, y: bbox.max.y, z: bbox.max.z }
+      max: { x: bbox.max.x, y: bbox.max.y, z: bbox.max.z },
     };
   }
 

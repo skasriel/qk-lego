@@ -55,6 +55,12 @@ class Builder extends React.Component {
     }
   };
 
+  handleSetModelRollOver = async (modelData) => {
+    if (this.sceneRef.current) {
+      await this.sceneRef.current.setModelRollOver(modelData);
+    }
+  };
+
   render() {
     const {
       mode,
@@ -91,7 +97,12 @@ class Builder extends React.Component {
           style={{ cursor: getCursor(mode) }}
         />
 
-        <Bottombar brickID={brickID} onClickSetBrick={setBrick} onLoadModel={this.handleLoadModel} />
+        <Bottombar
+          brickID={brickID}
+          onClickSetBrick={setBrick}
+          onLoadModel={this.handleLoadModel}
+          onSetModelRollOver={this.handleSetModelRollOver}
+        />
       </div>
     );
   }

@@ -165,3 +165,88 @@ export function removeBrickFromModel(model, uuid) {
   });
   return removed;
 }
+
+/**
+ * Calculate the bounding box of a model tree
+ * Returns { min: {x, y, z}, max: {x, y, z} } in LDraw coordinates
+ * 
+ * @param {Object} model - Model object with children
+ * @param {Object} parentTransform - Parent transform to apply
+ * @returns {Object} Bounding box
+ */
+export function calculateModelBounds(model, parentTransform = null) {
+  if (!model || !model.children || model.children.length === 0) {
+    return {
+      min: { x: 0, y: 0, z: 0 },
+      max: { x: 0, y: 0, z: 0 }
+    };
+  }
+
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+
+  for (const child of model.children) {
+    if (child.type === 'brick') {
+      const brick = child.object || child;
+      const transform = composeTransform(parentTransform, child.transform || {
+        position: brick.position || { x: 0, y: 0, z: 0 },
+        rotationMatrix: brick.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1]
+      });
+
+      const pos = transform.position;
+      
+      // Approximate brick size (1x1 brick is 20x24x20 LDU)
+      const halfWidth = 10;  // LDU
+      const halfDepth = 10;  // LDU
+      const height = 24;     // LDU (brick height)
+
+      minX = Math.min(minX, pos.x - halfWidth);
+      maxX = Math.max(maxX, pos.x + halfWidth);
+      minY = Math.min(minY, pos.y);
+      maxY = Math.max(maxY, pos.y + height);
+      minZ = Math.min(minZ, pos.z - halfDepth);
+      maxZ = Math.max(maxZ, pos.z + halfDepth);
+    } else if (child.type === 'model') {
+      const childModel = child.object || child;
+      const childTransform = composeTransform(parentTransform, child.transform);
+      const childBounds = calculateModelBounds(childModel, childTransform);
+      
+      minX = Math.min(minX, childBounds.min.x);
+      maxX = Math.max(maxX, childBounds.max.x);
+      minY = Math.min(minY, childBounds.min.y);
+      maxY = Math.max(maxY, childBounds.max.y);
+      minZ = Math.min(minZ, childBounds.min.z);
+      maxZ = Math.max(maxZ, childBounds.max.z);
+    }
+  }
+
+  // Handle empty model case
+  if (minX === Infinity) {
+    return {
+      min: { x: 0, y: 0, z: 0 },
+      max: { x: 0, y: 0, z: 0 }
+    };
+  }
+
+  return {
+    min: { x: minX, y: minY, z: minZ },
+    max: { x: maxX, y: maxY, z: maxZ }
+  };
+}
+
+/**
+ * Calculate the offset needed to position a model on the floor
+ * In LDraw Y-down coordinates:
+ * - y=0 is the floor level
+ * - Positive Y goes DOWN
+ * - The bottom of a model is at max.y
+ * - To place on floor: shift by -max.y
+ * 
+ * @param {Object} bounds - Bounding box from calculateModelBounds
+ * @returns {number} Y offset to apply
+ */
+export function getModelFloorOffset(bounds) {
+  // In Y-down, bottom is max.y
+  // To put bottom on floor (y=0), we need to subtract max.y
+  return -bounds.max.y;
+}

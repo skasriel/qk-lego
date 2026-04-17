@@ -75,15 +75,15 @@ class Bottombar extends React.Component {
   }
 
   handleSelectModel = async (model) => {
-    const { onLoadModel } = this.props;
-    if (onLoadModel) {
-      // Load the model (this will add it to the scene, not replace)
+    const { onSetModelRollOver } = this.props;
+    if (onSetModelRollOver) {
+      // Set the model as rollover (will follow mouse until placed)
       try {
         const res = await fetch(`/api/models/load/${encodeURIComponent(model.id || model.name)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.worldModel) {
-            onLoadModel(data.worldModel, false); // false = don't replace, add to scene
+            onSetModelRollOver(data.worldModel);
           }
         }
       } catch (err) {

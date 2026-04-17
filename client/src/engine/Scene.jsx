@@ -70,6 +70,11 @@ class Scene extends React.Component {
     this._stop = this._stop.bind(this);
     this._animate = this._animate.bind(this);
     this._needsRendering = true;
+    // Model rollover state (for placing full models, not just bricks)
+    this.rollOverModel = null; // Three.js Group for the model preview
+    this.rollOverModelData = null; // Original model data (worldModel format)
+    this.rollOverModelGhost = null; // Ghost scene group for collision detection
+    this._rollOverModelPromise = null; // Prevent concurrent preview creation
   }
 
   async componentDidMount() {
@@ -483,6 +488,139 @@ class Scene extends React.Component {
     return { brick: this.rollOverBrick, block: this.rollOverGhostBlock };
   }
 
+  /**
+   * Set a model as the current rollover (for placing)
+   * This stores the model data and creates a preview that follows the mouse
+   * @param {Object} modelData - The model data in worldModel format
+   */
+  async setModelRollOver(modelData) {
+    // Clear any existing model rollover
+    this.clearModelRollOver();
+
+    this.rollOverModelData = modelData;
+
+    // Hide the brick rollover while model is active
+    if (this.rollOverBrick) {
+      this.rollOverBrick.getModel().visible = false;
+    }
+  }
+
+
+  /**
+   * Clear the current model rollover
+   */
+  clearModelRollOver() {
+    if (this.rollOverModel) {
+      this.scene.remove(this.rollOverModel);
+      this.rollOverModel = null;
+    }
+    if (this.rollOverModelGhost) {
+      this.ghostScene.remove(this.rollOverModelGhost);
+      this.rollOverModelGhost = null;
+    }
+    this.rollOverModelData = null;
+    this._rollOverModelPromise = null;
+
+    // Show brick rollover again
+    if (this.rollOverBrick && this.props.mode === Modes.Build) {
+      this.rollOverBrick.getModel().visible = true;
+    }
+  }
+
+  /**
+   * Check if a model rollover is currently active
+   */
+  isModelRollOverActive() {
+    return this.rollOverModelData !== null;
+  }
+
+  /**
+   * Create a Three.js preview group for the model rollover
+   * This loads all bricks in the model and creates a group that follows the mouse
+   */
+  async _createModelRollOverPreview() {
+    // Prevent concurrent creation
+    if (this._rollOverModelPromise) {
+      await this._rollOverModelPromise;
+      return;
+    }
+
+    if (!this.rollOverModelData || this.rollOverModel) {
+      return;
+    }
+
+    this._rollOverModelPromise = (async () => {
+      const modelData = this.rollOverModelData;
+      const previewGroup = new THREE.Group();
+      previewGroup.name = `Preview_${modelData.name || 'Model'}`;
+
+      // Load all bricks in the model
+      const loadBricksRecursive = async (node, parentGroup) => {
+        const children = node.children || [];
+        for (const child of children) {
+          if (child.type === 'brick') {
+            const brickState = child.object || child;
+            // For preview, use the brick's local transform, not composed world transform
+            // The parentGroup hierarchy will handle the positioning
+            const localTransform = child.transform || {};
+
+            try {
+              const brick = await BasicBrick.load({
+                ...brickState,
+                position: localTransform.position || brickState.position,
+                rotationMatrix: localTransform.rotationMatrix || brickState.rotationMatrix,
+              });
+
+              // Clone the model for preview (don't add to scene via addToScene)
+              const brickModel = brick.getModel().clone();
+              brickModel.position.copy(brick.getModel().position);
+              brickModel.rotation.copy(brick.getModel().rotation);
+              parentGroup.add(brickModel);
+            } catch (err) {
+              console.error('Failed to load brick for preview:', err);
+            }
+          } else if (child.type === 'model') {
+            const childModelData = child.object || child;
+            const childGroup = new THREE.Group();
+            childGroup.name = childModelData.name || 'SubModel';
+
+            // Use local transform, not composed world transform
+            const localTransform = child.transform || {};
+            if (localTransform.position) {
+              childGroup.position.set(
+                localTransform.position.x,
+                localTransform.position.y,
+                localTransform.position.z
+              );
+            }
+
+            parentGroup.add(childGroup);
+            await loadBricksRecursive(childModelData, childGroup, null);
+          }
+        }
+      };
+
+      await loadBricksRecursive(modelData, previewGroup);
+
+
+      // Position at origin initially (Y=0) - will be updated by mouse move
+      previewGroup.position.set(0, 0, 0);
+
+      // Add to scene
+      this.scene.add(previewGroup);
+      this.rollOverModel = previewGroup;
+
+
+      // Create ghost version for collision detection
+      const ghostGroup = previewGroup.clone();
+      this.ghostScene.add(ghostGroup);
+      this.rollOverModelGhost = ghostGroup;
+
+    })();
+    await this._rollOverModelPromise;
+    this._rollOverModelPromise = null;
+  }
+
   _setEventListeners() {
     document.addEventListener('mousemove', (event) => this._onMouseMove(event), false);
     document.addEventListener('mousedown', (event) => this._onMouseDown(event), false);
@@ -506,7 +644,7 @@ class Scene extends React.Component {
   */
   _getIntersect(event) {
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     // Use actual brick models for intersection, not ghost boxes
@@ -633,17 +771,27 @@ class Scene extends React.Component {
 
     const { mode } = this.props; // edit vs draw
 
-    // Ensure rollover brick exists
-    if (!this.rollOverBrick) {
-      await this._getRollOverBrick();
-    }
+    // Handle model rollover if active
+    const isModelActive = this.isModelRollOverActive();
 
-    const rollOverBrick = this.rollOverBrick;
-    const rollOverGhostBlock = this.rollOverGhostBlock;
-
-    if (!rollOverBrick) {
-      console.log('No rollover brick!');
-      return;
+    if (isModelActive) {
+      // Ensure model preview exists
+      if (!this.rollOverModel) {
+        await this._createModelRollOverPreview();
+      }
+      if (!this.rollOverModel) {
+        console.log('No rollover model!');
+        return;
+      }
+    } else {
+      // Ensure rollover brick exists
+      if (!this.rollOverBrick) {
+        await this._getRollOverBrick();
+      }
+      if (!this.rollOverBrick) {
+        console.log('No rollover brick!');
+        return;
+      }
     }
 
     event.preventDefault();
@@ -651,13 +799,29 @@ class Scene extends React.Component {
     const drag = true;
     this.setState({ drag });
 
+    // Hide rollovers in non-build modes
     if (mode === Modes.Delete || mode === Modes.Paint || mode === Modes.Explore) {
-      rollOverBrick.getModel().visible = false;
+      if (isModelActive && this.rollOverModel) {
+        this.rollOverModel.visible = false;
+      } else if (!isModelActive && this.rollOverBrick) {
+        this.rollOverBrick.getModel().visible = false;
+      }
       return;
     }
     if (mode === Modes.Move && !this.isBrickSelected) {
-      rollOverBrick.getModel().visible = false;
+      if (isModelActive && this.rollOverModel) {
+        this.rollOverModel.visible = false;
+      } else if (!isModelActive && this.rollOverBrick) {
+        this.rollOverBrick.getModel().visible = false;
+      }
       return;
+    }
+
+    // Show rollovers in build mode
+    if (isModelActive && this.rollOverModel) {
+      this.rollOverModel.visible = true;
+    } else if (!isModelActive && this.rollOverBrick) {
+      this.rollOverBrick.getModel().visible = true;
     }
 
     const intersect = this._getIntersect(event);
@@ -665,13 +829,41 @@ class Scene extends React.Component {
       return;
     }
 
+    let intersectObject = intersect.object;
+    let position = this.scene.worldToLocal(intersect.point.clone());
+
+    // Handle model rollover positioning
+    if (isModelActive) {
+      console.log(
+        intersectObject?.name || intersectObject?.type
+      );
+
+      if (intersectObject === this.plane || intersectObject === this.ghostPlane) {
+        // Place model at intersect point with Y=0
+        position.y = 0;
+      } else {
+        // For now, place at intersect point with Y=0
+        // TODO: Add stacking support for models
+        position.y = 0;
+      }
+
+      // Update model preview position
+      this.rollOverModel.position.copy(position);
+      if (this.rollOverModelGhost) {
+        this.rollOverModelGhost.position.copy(position);
+      }
+      this._needsRendering = true;
+      return; // Skip brick handling
+    }
+
+    // Handle brick rollover (existing code)
+    const rollOverBrick = this.rollOverBrick;
+    const rollOverGhostBlock = this.rollOverGhostBlock;
+
     // Recompute the rollover brick's LOCAL bounds so rotation is reflected correctly.
     const bb = this._getModelLocalBoundingBox(rollOverBrick.getModel());
     // In Y-down, bottom is max.y
     const bottomOffset = bb.max.y;
-
-    let intersectObject = intersect.object;
-    let position = this.scene.worldToLocal(intersect.point.clone());
 
     if (intersectObject === this.plane || intersectObject === this.ghostPlane) {
       // Place brick so its bottom sits on the floor (y=0)
@@ -1103,7 +1295,7 @@ class Scene extends React.Component {
         });
         this._setupNewBrick(brick, parentModel, transform);
       } else if (child.type === 'model') {
-        console.log('Child is a model - loading recursively')
+        console.log('Child is a model - loading recursively');
         const childModelData = child.object || child;
         const runtimeModel = new Model(childModelData.name || 'Untitled');
         parentModel.addModel(runtimeModel, child.transform || null);
@@ -1140,7 +1332,8 @@ class Scene extends React.Component {
       // After loading, ensure the model sits on the floor (y=0)
       // In LDraw Y-down coordinates, find the lowest point (largest Y value)
       // and shift the entire model up so the bottom touches the floor
-      this._positionModelOnFloor();
+      // TEMPORARILY DISABLED FOR TESTING
+      // this._positionModelOnFloor();
 
       this._renderScene();
       console.log(`Done loading world model`);
@@ -1202,7 +1395,9 @@ class Scene extends React.Component {
       maxY,
       lowestY,
     });
-    console.log(`Model bounds: minY=${minY.toFixed(2)}, maxY=${maxY.toFixed(2)}, lowestY=${lowestY.toFixed(2)}`);
+    console.log(
+      `Model bounds: minY=${minY.toFixed(2)}, maxY=${maxY.toFixed(2)}, lowestY=${lowestY.toFixed(2)}`
+    );
 
     if (Math.abs(lowestY) <= 0.1) {
       console.log('Model already positioned correctly on floor');

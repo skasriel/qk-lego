@@ -101,9 +101,9 @@ class ModelPicker extends React.Component {
       const response = await fetch('/api/models/list');
       if (response.ok) {
         const data = await response.json();
-        this.setState({ 
+        this.setState({
           models: data.models || [],
-          loading: false 
+          loading: false,
         });
       }
     } catch (err) {
@@ -114,18 +114,18 @@ class ModelPicker extends React.Component {
 
   getFilteredModels = () => {
     const { models, selectedCategory, filterYear, filterTheme } = this.state;
-    
+
     let filtered = [...models];
-    
+
     if (selectedCategory === 'By Year' && filterYear) {
-      filtered = filtered.filter(m => m.year === filterYear);
+      filtered = filtered.filter((m) => m.year === filterYear);
     } else if (selectedCategory === 'By Theme' && filterTheme) {
-      filtered = filtered.filter(m => m.theme === filterTheme);
+      filtered = filtered.filter((m) => m.theme === filterTheme);
     } else if (selectedCategory === 'By Size') {
       // Sort by piece count
       filtered.sort((a, b) => (a.pieces || 0) - (b.pieces || 0));
     }
-    
+
     return filtered;
   };
 
@@ -143,15 +143,25 @@ class ModelPicker extends React.Component {
     if (loading) {
       return (
         <div style={styles.picker}>
-          <div style={{ ...styles.partsGrid, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}>
+          <div
+            style={{
+              ...styles.partsGrid,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'rgba(255,255,255,0.5)',
+            }}
+          >
             Loading models...
           </div>
         </div>
       );
     }
 
-    const years = [...new Set(this.state.models.map(m => m.year).filter(Boolean))].sort((a, b) => b - a);
-    const themes = [...new Set(this.state.models.map(m => m.theme).filter(Boolean))].sort();
+    const years = [...new Set(this.state.models.map((m) => m.year).filter(Boolean))].sort(
+      (a, b) => b - a
+    );
+    const themes = [...new Set(this.state.models.map((m) => m.theme).filter(Boolean))].sort();
 
     return (
       <div style={styles.picker}>
@@ -176,15 +186,24 @@ class ModelPicker extends React.Component {
             </div>
           ))}
           {selectedCategory === 'By Year' && years.length > 0 && (
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '8px', paddingTop: '8px' }}>
-              {years.slice(0, 10).map(year => (
+            <div
+              style={{
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                marginTop: '8px',
+                paddingTop: '8px',
+              }}
+            >
+              {years.slice(0, 10).map((year) => (
                 <div
                   key={year}
-                  onClick={() => this.setState({ filterYear: this.state.filterYear === year ? null : year })}
+                  onClick={() =>
+                    this.setState({ filterYear: this.state.filterYear === year ? null : year })
+                  }
                   style={{
                     ...styles.categoryItem,
                     paddingLeft: '25px',
-                    backgroundColor: this.state.filterYear === year ? 'rgba(96, 165, 250, 0.15)' : 'transparent',
+                    backgroundColor:
+                      this.state.filterYear === year ? 'rgba(96, 165, 250, 0.15)' : 'transparent',
                   }}
                 >
                   {year}
@@ -193,16 +212,25 @@ class ModelPicker extends React.Component {
             </div>
           )}
           {selectedCategory === 'By Theme' && themes.length > 0 && (
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '8px', paddingTop: '8px' }}>
-              {themes.slice(0, 15).map(theme => (
+            <div
+              style={{
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                marginTop: '8px',
+                paddingTop: '8px',
+              }}
+            >
+              {themes.slice(0, 15).map((theme) => (
                 <div
                   key={theme}
-                  onClick={() => this.setState({ filterTheme: this.state.filterTheme === theme ? null : theme })}
+                  onClick={() =>
+                    this.setState({ filterTheme: this.state.filterTheme === theme ? null : theme })
+                  }
                   style={{
                     ...styles.categoryItem,
                     paddingLeft: '25px',
                     fontSize: '0.75em',
-                    backgroundColor: this.state.filterTheme === theme ? 'rgba(96, 165, 250, 0.15)' : 'transparent',
+                    backgroundColor:
+                      this.state.filterTheme === theme ? 'rgba(96, 165, 250, 0.15)' : 'transparent',
                   }}
                 >
                   {theme}
@@ -229,7 +257,16 @@ class ModelPicker extends React.Component {
               {model.image ? (
                 <img src={model.image} alt={model.name} style={styles.modelImage} />
               ) : (
-                <div style={{ ...styles.modelImage, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '2em' }}>
+                <div
+                  style={{
+                    ...styles.modelImage,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'rgba(255,255,255,0.3)',
+                    fontSize: '2em',
+                  }}
+                >
                   ?
                 </div>
               )}
@@ -242,7 +279,14 @@ class ModelPicker extends React.Component {
             </div>
           ))}
           {filteredModels.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'rgba(255,255,255,0.5)', padding: '40px' }}>
+            <div
+              style={{
+                gridColumn: '1 / -1',
+                textAlign: 'center',
+                color: 'rgba(255,255,255,0.5)',
+                padding: '40px',
+              }}
+            >
               No models found
             </div>
           )}
