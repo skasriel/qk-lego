@@ -75,6 +75,7 @@ class Scene extends React.Component {
     this.rollOverModelData = null; // Original model data (worldModel format)
     this.rollOverModelGhost = null; // Ghost scene group for collision detection
     this._rollOverModelPromise = null; // Prevent concurrent preview creation
+    this._modelAngle = 0; // Track rotation for model rollover
   }
 
   async componentDidMount() {
@@ -498,13 +499,13 @@ class Scene extends React.Component {
     this.clearModelRollOver();
 
     this.rollOverModelData = modelData;
+    this._modelAngle = 0;
 
     // Hide the brick rollover while model is active
     if (this.rollOverBrick) {
       this.rollOverBrick.getModel().visible = false;
     }
   }
-
 
   /**
    * Clear the current model rollover
@@ -520,6 +521,7 @@ class Scene extends React.Component {
     }
     this.rollOverModelData = null;
     this._rollOverModelPromise = null;
+    this._modelAngle = 0;
 
     // Show brick rollover again
     if (this.rollOverBrick && this.props.mode === Modes.Build) {
@@ -532,6 +534,19 @@ class Scene extends React.Component {
    */
   isModelRollOverActive() {
     return this.rollOverModelData !== null;
+  }
+
+  _rotateModelRollOver(angle) {
+    if (!this.rollOverModel) {
+      return;
+    }
+
+    this._modelAngle += angle;
+    this.rollOverModel.rotation.y = this._modelAngle;
+    if (this.rollOverModelGhost) {
+      this.rollOverModelGhost.rotation.y = this._modelAngle;
+    }
+    this._needsRendering = true;
   }
 
   /**
@@ -595,27 +610,25 @@ class Scene extends React.Component {
             }
 
             parentGroup.add(childGroup);
-            await loadBricksRecursive(childModelData, childGroup, null);
+            await loadBricksRecursive(childModelData, childGroup);
           }
         }
       };
 
       await loadBricksRecursive(modelData, previewGroup);
 
-
       // Position at origin initially (Y=0) - will be updated by mouse move
       previewGroup.position.set(0, 0, 0);
+      previewGroup.rotation.y = this._modelAngle;
 
       // Add to scene
       this.scene.add(previewGroup);
       this.rollOverModel = previewGroup;
 
-
       // Create ghost version for collision detection
       const ghostGroup = previewGroup.clone();
       this.ghostScene.add(ghostGroup);
       this.rollOverModelGhost = ghostGroup;
-
     })();
     await this._rollOverModelPromise;
     this._rollOverModelPromise = null;
@@ -766,23 +779,32 @@ class Scene extends React.Component {
 
     // Get the current position of the rollover model
     const position = this.rollOverModel.position.clone();
-    
+
     // Load the model data at the specified position
     // We need to create a transform that positions the model at the rollover location
     const modelTransform = {
       position: { x: position.x, y: position.y, z: position.z },
-      rotationMatrix: [1, 0, 0, 0, 1, 0, 0, 0, 1] // Identity for now, could add rotation later
+      rotationMatrix: [
+        Math.cos(this._modelAngle),
+        0,
+        Math.sin(this._modelAngle),
+        0,
+        1,
+        0,
+        -Math.sin(this._modelAngle),
+        0,
+        Math.cos(this._modelAngle),
+      ],
     };
 
     // Add the model to the world
     await this.loadWorldModel(this.rollOverModelData, this.worldModel, modelTransform);
-    
+
     // Clear the rollover (removes preview)
     this.clearModelRollOver();
-    
+
     this._renderScene();
   }
-
 
   /**
    * Returns a one way hash of the current view of the world, as a way to ensure consistency between client(s) and Server
@@ -863,9 +885,7 @@ class Scene extends React.Component {
 
     // Handle model rollover positioning
     if (isModelActive) {
-      console.log(
-        intersectObject?.name || intersectObject?.type
-      );
+      console.log(intersectObject?.name || intersectObject?.type);
 
       if (intersectObject === this.plane || intersectObject === this.ghostPlane) {
         // Place model at intersect point with Y=0
@@ -977,12 +997,6 @@ class Scene extends React.Component {
             // now delete the brick locally
             this._deleteBrick(brick);
           }
-        case Modes.Build:
-          if (this.isModelRollOverActive()) {
-            await this._createModel(intersect);
-          } else {
-            await this._createBrick(intersect);
-          }
           break;
         case Modes.Build:
           if (this.isModelRollOverActive()) {
@@ -990,14 +1004,6 @@ class Scene extends React.Component {
           } else {
             await this._createBrick(intersect);
           }
-          break;
-        case Modes.Build:
-          if (this.isModelRollOverActive()) {
-            await this._createModel(intersect);
-          } else {
-            await this._createBrick(intersect);
-          }
-          break;
           break;
         case Modes.Paint:
           this._paintBrick(intersect);
@@ -1178,8 +1184,20 @@ class Scene extends React.Component {
           rollOverBrick.getModel().visible = false;
           break;
 
-        case 82: // R
-          rollOverBrick.rotateY(Math.PI / 2);
+        case 82: // R - rotate clockwise
+          if (this.isModelRollOverActive()) {
+            this._rotateModelRollOver(-Math.PI / 2);
+          } else if (rollOverBrick) {
+            rollOverBrick.rotateY(-Math.PI / 2);
+          }
+          break;
+
+        case 76: // L - rotate counter-clockwise
+          if (this.isModelRollOverActive()) {
+            this._rotateModelRollOver(Math.PI / 2);
+          } else if (rollOverBrick) {
+            rollOverBrick.rotateY(Math.PI / 2);
+          }
           break;
 
         case 88: // X

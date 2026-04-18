@@ -23,14 +23,7 @@ function getLDrawLoader() {
     // setPartsLibraryPath controls where fetchData() looks for sub-parts
     lDrawLoader.setPartsLibraryPath('/ldraw/');
     // Required for three.js 0.183+ - set conditional line material
-    console.log('LDrawConditionalLineMaterial import:', LDrawConditionalLineMaterial);
-    console.log('Type:', typeof LDrawConditionalLineMaterial);
     lDrawLoader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
-    console.log('After set, loader.ConditionalLineMaterial:', lDrawLoader.ConditionalLineMaterial);
-    console.log(
-      'Are they equal?',
-      lDrawLoader.ConditionalLineMaterial === LDrawConditionalLineMaterial
-    );
 
     // Preload LDraw color definitions to avoid "Material properties not available" warnings
     // Use absolute path since LDConfig.ldr is in /ldraw/, not /ldraw/parts/
