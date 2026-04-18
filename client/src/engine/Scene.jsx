@@ -745,20 +745,25 @@ class Scene extends React.Component {
     let position = rollOverGhostBlock.position.clone();
     position.y += BOUNDINGBOX_OFFSET;
 
-    // Create brick asynchronously from DAT file
+    // Create a fresh brick and then apply the rollover transform directly.
+    // This keeps the placed brick visually identical to the preview.
     const brick = await BasicBrick.createFromDAT(
       rollOverBrick._brickID,
       rollOverBrick.color,
       rollOverBrick.colorType
     );
 
-    if (rollOverBrick._angle && rollOverBrick._angle != 0) {
+    brick.setPosition(position, true);
+
+    if (rollOverBrick._angle && rollOverBrick._angle !== 0) {
       brick.rotateY(rollOverBrick._angle);
+      brick.getModel().updateMatrixWorld(true);
+      brick.ghostBlock.updateMatrixWorld(true);
     }
+
     console.log(
       `create brick, no collisions. Added ${BOUNDINGBOX_OFFSET} to y=${position.y} will set position to ${_toStringVector3D(position)}`
     );
-    brick.setPosition(position, true);
 
     // now send message to server (before adding to the scene, otherwise the world signature will be wrong!)
     let action = new Action(Action.Create, this.getWorldSignature());
