@@ -314,7 +314,10 @@ function parseModelContent(
           );
           model.children.push({
             type: 'model',
-            object: subModel,
+            object: {
+              ...subModel,
+              sourcePath: file,
+            },
             transform: {
               position: localPos,
               rotationMatrix: localMatrix,
@@ -354,7 +357,10 @@ function parseModelContent(
             );
             model.children.push({
               type: 'model',
-              object: subModel,
+              object: {
+                ...subModel,
+                sourcePath: file,
+              },
               transform: {
                 position: localPos,
                 rotationMatrix: localMatrix,
@@ -492,6 +498,19 @@ function modelToMPD(model, basePath = '') {
 
         lines.push(`1 ${color} ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${partFile}`);
       } else if (child.type === 'model') {
+        const sourcePath = child.object?.sourcePath || child.sourcePath;
+        if (sourcePath) {
+          const pos = child.transform?.position || { x: 0, y: 0, z: 0 };
+          const rot = child.transform?.rotationMatrix || [1, 0, 0, 0, 1, 0, 0, 0, 1];
+          const x = pos.x;
+          const y = pos.y;
+          const z = pos.z;
+          lines.push(
+            `1 16 ${x} ${y} ${z} ${rot[0]} ${rot[1]} ${rot[2]} ${rot[3]} ${rot[4]} ${rot[5]} ${rot[6]} ${rot[7]} ${rot[8]} ${sourcePath}`
+          );
+          continue;
+        }
+
         // Generate name for sub-model if it doesn't have one
         let subModelName = child.object?.name || child.name;
         if (!subModelName || subModelName === 'Untitled') {

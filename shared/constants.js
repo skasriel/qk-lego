@@ -113,6 +113,10 @@ export class Action {
   deleteBrick(brick) {
     this.uuid = brick._uuid;
   }
+
+  reloadWorld(worldModel) {
+    this.worldModel = worldModel;
+  }
 }
 
 // Utility functions

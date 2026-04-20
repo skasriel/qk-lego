@@ -437,6 +437,7 @@ app.get('/api/models/load/:name', (req, res) => {
     
     const mpdContent = fs.readFileSync(modelFile, 'utf8');
     const worldModel = parseMPD(mpdContent, modelFile);
+    worldModel.sourcePath = path.relative(dataDir, modelFile).replace(/\\/g, '/');
     
     res.json({
       success: true,
@@ -550,6 +551,13 @@ wss.on('connection', function connection(ws) {
           brickToMove.position.x = action.brick.position.x;
           brickToMove.position.y = action.brick.position.y;
           brickToMove.position.z = action.brick.position.z;
+          break;
+        case Action.Reload:
+          if (action.worldModel) {
+            worldModel = action.worldModel;
+            saveWorldToDisk();
+            console.log('Reloaded world model from client and persisted to disk');
+          }
           break;
         case Action.Reset:
           worldModel = { type: 'model', name: 'Current World', children: [] };

@@ -802,13 +802,53 @@ class Scene extends React.Component {
       ],
     };
 
-    // Add the model to the world
-    await this.loadWorldModel(this.rollOverModelData, this.worldModel, modelTransform);
+    const placedModel = {
+      type: 'model',
+      name: this.rollOverModelData.name || 'Model',
+      sourcePath: this.rollOverModelData.sourcePath || null,
+      children: this.rollOverModelData.children || [],
+    };
+    const runtimeModel = new Model(placedModel.name);
+    runtimeModel.sourcePath = placedModel.sourcePath;
+
+    this.worldModel.addModel(runtimeModel, modelTransform);
+
+    // Render the model into the scene while preserving its local hierarchy in
+    // the runtime world model so persistence can write an external model ref.
+    await this.loadWorldModel(placedModel, runtimeModel, modelTransform);
+
+    // Persist the full hierarchical world back to the server.
+    let action = new Action(Action.Reload, this.getWorldSignature());
+    action.reloadWorld(this._serializeWorldModel(this.worldModel));
+    this._sendActionToWebSocket(action);
 
     // Clear the rollover (removes preview)
     this.clearModelRollOver();
 
     this._renderScene();
+  }
+
+  _serializeWorldModel(model) {
+    return {
+      type: 'model',
+      name: model.name,
+      sourcePath: model.sourcePath || null,
+      children: (model.children || []).map((child) => {
+        if (child.type === 'brick') {
+          return {
+            type: 'brick',
+            object: child.object.save ? child.object.save() : child.object,
+            transform: child.transform || null,
+          };
+        }
+
+        return {
+          type: 'model',
+          object: this._serializeWorldModel(child.object || child),
+          transform: child.transform || null,
+        };
+      }),
+    };
   }
 
   /**
@@ -1350,6 +1390,7 @@ class Scene extends React.Component {
     if (!node) return null;
     if (!parentModel) {
       this.worldModel = new Model(node.name || 'Current World');
+      this.worldModel.sourcePath = node.sourcePath || null;
       parentModel = this.worldModel;
     }
 
@@ -1368,6 +1409,7 @@ class Scene extends React.Component {
         console.log('Child is a model - loading recursively');
         const childModelData = child.object || child;
         const runtimeModel = new Model(childModelData.name || 'Untitled');
+        runtimeModel.sourcePath = childModelData.sourcePath || null;
         parentModel.addModel(runtimeModel, child.transform || null);
         await this.loadWorldModel(
           childModelData,
