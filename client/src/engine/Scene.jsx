@@ -806,16 +806,19 @@ class Scene extends React.Component {
       type: 'model',
       name: this.rollOverModelData.name || 'Model',
       sourcePath: this.rollOverModelData.sourcePath || null,
-      children: [],
+      children: this.rollOverModelData.children || [],
     };
     const runtimeModel = new Model(placedModel.name);
     runtimeModel.sourcePath = placedModel.sourcePath;
 
     this.worldModel.addModel(runtimeModel, modelTransform);
 
-    // Render the model into the scene while preserving its local hierarchy in
-    // the runtime world model so persistence can write an external model ref.
+    // Render the model into the scene. Use the full model data (with children)
+    // for rendering, but the runtime model will only persist the reference.
     await this.loadWorldModel(placedModel, runtimeModel, modelTransform);
+
+    // Clear the persisted children - we only want to save the reference
+    runtimeModel.children = [];
 
     // Persist the full hierarchical world back to the server.
     let action = new Action(Action.Reload, this.getWorldSignature());
