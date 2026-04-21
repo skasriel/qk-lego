@@ -92,11 +92,60 @@ loadWorldFromDisk();
 
 // Saves the world.mpd file based on changes made by one of the clients
 function persistWorld() {
+  // Expand any model references before sending to client
+  const expandedWorld = expandModelReferences(worldModel);
   let response = {
     version: FILE_VERSION_CURRENT,
-    worldModel: worldModel,
+    worldModel: expandedWorld,
   };
   return response;
+}
+
+function expandModelReferences(model) {
+  if (!model || !model.children) return model;
+
+  const expanded = {
+    type: model.type,
+    name: model.name,
+    sourcePath: model.sourcePath || null,
+    children: [],
+  };
+
+  for (const child of model.children) {
+    if (child.type === 'model' && child.object?.sourcePath) {
+      // This is a reference to an external model - load and expand it
+      try {
+        const modelPath = path.join(dataDir, child.object.sourcePath);
+        if (fs.existsSync(modelPath)) {
+          const mpdContent = fs.readFileSync(modelPath, 'utf8');
+          const loadedModel = parseMPD(mpdContent, modelPath);
+          // Add the loaded model with the placement transform
+          expanded.children.push({
+            type: 'model',
+            object: loadedModel,
+            transform: child.transform || null,
+          });
+        } else {
+          // Keep as reference if file not found
+          expanded.children.push(child);
+        }
+      } catch (e) {
+        console.error(`Failed to expand model reference ${child.object.sourcePath}:`, e);
+        expanded.children.push(child);
+      }
+    } else if (child.type === 'model') {
+      // Recursively expand nested models
+      expanded.children.push({
+        type: 'model',
+        object: expandModelReferences(child.object || child),
+        transform: child.transform || null,
+      });
+    } else {
+      expanded.children.push(child);
+    }
+  }
+
+  return expanded;
 }
 function saveWorldToDisk() { // TODO: use async version of writeFile
   modelToMPD(worldModel, worldFileName);
