@@ -806,7 +806,7 @@ class Scene extends React.Component {
       type: 'model',
       name: this.rollOverModelData.name || 'Model',
       sourcePath: this.rollOverModelData.sourcePath || null,
-      children: this.rollOverModelData.children || [],
+      children: [],
     };
     const runtimeModel = new Model(placedModel.name);
     runtimeModel.sourcePath = placedModel.sourcePath;
@@ -1406,16 +1406,14 @@ class Scene extends React.Component {
         });
         this._setupNewBrick(brick, parentModel, transform);
       } else if (child.type === 'model') {
-        console.log('Child is a model - loading recursively');
         const childModelData = child.object || child;
         const runtimeModel = new Model(childModelData.name || 'Untitled');
         runtimeModel.sourcePath = childModelData.sourcePath || null;
         parentModel.addModel(runtimeModel, child.transform || null);
-        await this.loadWorldModel(
-          childModelData,
-          runtimeModel,
-          composeTransform(parentTransform, child.transform || {})
-        );
+        // Pass the composed transform so nested children are positioned correctly
+        // relative to the world, but store only the local transform in the hierarchy.
+        const composed = composeTransform(parentTransform, child.transform || {});
+        await this.loadWorldModel(childModelData, runtimeModel, composed);
       }
     }
     return parentModel;
