@@ -16,6 +16,8 @@ import {
   composeTransform,
   normalizeNodeForHash,
   getWorldHash,
+  calculateModelBounds,
+  getModelFloorOffset,
 } from '../../../shared/transforms.js';
 import { Modes, Action } from '../util';
 
@@ -933,15 +935,17 @@ class Scene extends React.Component {
 
     // Handle model rollover positioning
     if (isModelActive) {
-      console.log(intersectObject?.name || intersectObject?.type);
+      // Calculate floor offset so model sits on the floor
+      const bounds = calculateModelBounds(this.rollOverModelData);
+      const floorOffset = getModelFloorOffset(bounds);
 
       if (intersectObject === this.plane || intersectObject === this.ghostPlane) {
-        // Place model at intersect point with Y=0
-        position.y = 0;
+        // Place model so its bottom sits on the floor (y=0 in LDraw coords)
+        position.y = floorOffset;
       } else {
-        // For now, place at intersect point with Y=0
+        // For now, place on floor even when intersecting other objects
         // TODO: Add stacking support for models
-        position.y = 0;
+        position.y = floorOffset;
       }
 
       // Update model preview position
