@@ -554,6 +554,7 @@ class Scene extends React.Component {
   /**
    * Create a Three.js preview group for the model rollover
    * This loads all bricks in the model and creates a group that follows the mouse
+   * Uses the same transform composition as loadWorldModel for consistency
    */
   async _createModelRollOverPreview() {
     // Prevent concurrent creation
@@ -571,21 +572,20 @@ class Scene extends React.Component {
       const previewGroup = new THREE.Group();
       previewGroup.name = `Preview_${modelData.name || 'Model'}`;
 
-      // Load all bricks in the model
-      const loadBricksRecursive = async (node, parentGroup) => {
+      // Load all bricks in the model using the same approach as loadWorldModel
+      // Compose transforms to get world positions, then store in a flat group
+      const loadBricksRecursive = async (node, parentGroup, parentTransform = null) => {
         const children = node.children || [];
         for (const child of children) {
           if (child.type === 'brick') {
             const brickState = child.object || child;
-            // For preview, use the brick's local transform, not composed world transform
-            // The parentGroup hierarchy will handle the positioning
-            const localTransform = child.transform || {};
+            const transform = composeTransform(parentTransform, child.transform || {});
 
             try {
               const brick = await BasicBrick.load({
                 ...brickState,
-                position: localTransform.position || brickState.position,
-                rotationMatrix: localTransform.rotationMatrix || brickState.rotationMatrix,
+                position: transform.position || brickState.position,
+                rotationMatrix: transform.rotationMatrix || brickState.rotationMatrix,
               });
 
               // Clone the model for preview (don't add to scene via addToScene)
@@ -598,28 +598,16 @@ class Scene extends React.Component {
             }
           } else if (child.type === 'model') {
             const childModelData = child.object || child;
-            const childGroup = new THREE.Group();
-            childGroup.name = childModelData.name || 'SubModel';
-
-            // Use local transform, not composed world transform
-            const localTransform = child.transform || {};
-            if (localTransform.position) {
-              childGroup.position.set(
-                localTransform.position.x,
-                localTransform.position.y,
-                localTransform.position.z
-              );
-            }
-
-            parentGroup.add(childGroup);
-            await loadBricksRecursive(childModelData, childGroup);
+            const childTransform = composeTransform(parentTransform, child.transform || {});
+            await loadBricksRecursive(childModelData, parentGroup, childTransform);
           }
         }
       };
 
-      await loadBricksRecursive(modelData, previewGroup);
+      await loadBricksRecursive(modelData, previewGroup, null);
 
-      // Position at origin initially (Y=0) - will be updated by mouse move
+      // Position at origin initially - will be updated by mouse move
+      // The bricks are already positioned relative to model origin
       previewGroup.position.set(0, 0, 0);
       previewGroup.rotation.y = this._modelAngle;
 
